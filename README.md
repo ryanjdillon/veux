@@ -5,7 +5,7 @@
 
 # veux
 
-A terminal UI to configure ReSpeaker audio devices across a home network, with the desired
+A terminal UI to configure ReSpeaker audio devices across a network, with the desired
 state in `veux.toml`.
 
 **[Documentation](docs/README.md)** ·
@@ -96,21 +96,48 @@ The default theme, `ligne-claire`, is ink on cream paper in a 1930s comic style.
 
 Every command takes `--config`. Device names come from `veux.toml`.
 
-| Goal | Command | What it does |
-|---|---|---|
-| Validate | `veux check --config examples/veux.toml` | Checks a config against the device schemas. |
-| | `veux plan` | Shows where devices differ from their profiles. |
-| Declare | `veux apply kitchen-hat` | Writes profile values to the runtime. |
-| | `veux commit kitchen-hat` | Makes the runtime values survive a power cycle. |
-| | `veux export kitchen-hat` | Prints the runtime values as a profile table. |
-| Read and write | `veux read desk-array number.asr_output_gain` | Reads runtime values. |
-| | `veux write desk-array switch.wake_sound=false` | Writes runtime values, in TOML syntax. |
-| Monitor | `veux meter kitchen-hat` | Shows live levels for 10 s. |
-| | `veux tone kitchen-hat --channel right` | Plays a test tone on one channel. |
-| Firmware | `veux firmware office-array` | Shows the version and DFU slots. |
-| | `veux firmware office-array image.bin` | Flashes an image after a confirmation. |
-| | `veux firmware desk-array --bundled` | ESPHome: the ESP32 writes the image of its build. |
-| Discover | `veux probe` | Finds XVF3800 devices on local USB. |
+### Check a config
+
+```bash
+veux check --config examples/veux.toml   # checks a config against the device schemas
+veux plan                                # shows where devices differ from their profiles
+```
+
+### Apply a profile
+
+```bash
+veux apply kitchen-hat    # writes profile values to the runtime
+veux commit kitchen-hat   # makes the runtime values survive a power cycle
+veux export kitchen-hat   # prints the runtime values as a profile table
+```
+
+### Read and write values
+
+```bash
+veux read desk-array number.asr_output_gain
+veux write desk-array switch.wake_sound=false   # runtime only, in TOML syntax
+```
+
+### Monitor and test
+
+```bash
+veux meter kitchen-hat                   # shows live levels for 10 s
+veux tone kitchen-hat --channel right    # plays a test tone on one channel
+```
+
+### Update firmware
+
+```bash
+veux firmware office-array               # shows the version and DFU slots
+veux firmware office-array image.bin     # flashes an image after a confirmation
+veux firmware desk-array --bundled       # ESPHome: the ESP32 writes the image of its build
+```
+
+### Find devices
+
+```bash
+veux probe    # finds XVF3800 devices on local USB
+```
 
 ## Contributing
 
