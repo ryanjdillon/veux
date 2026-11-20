@@ -233,6 +233,10 @@ VEUX_TEST_ESPHOME=satellite.local:6053 VEUX_TEST_ESPHOME_KEY="$VEUX_DESK_API_KEY
   `xvf_set` payload is a hex string, for example `"0a1b"`. In ESPHome
   2026.9, an `int[]` argument does not compile with `api.respond`. ESPHome
   2026.11.0 compiles it. The hex string works on both, so it stays.
+- `xvf_set` accepts only an allowlist of resource and command IDs: PP 17,
+  AEC 33, AUDIO_MGR 35, and the AIC3104 levels (48/11, 48/12). It refuses
+  the IDs that the component owns, the XMOS DFU resource (240), and the mute
+  function (36/8). A raw API key alone cannot write the XMOS firmware.
 - The `xvf_get` response data is `{"reply": [status, payload...]}`. Only
   an I2C failure sets `success = false` and an error message.
 - API 1.16 has `ExecuteServiceRequest.return_response` and
@@ -293,6 +297,14 @@ VEUX_TEST_ESPHOME=satellite.local:6053 VEUX_TEST_ESPHOME_KEY="$VEUX_DESK_API_KEY
   action does not compile in an action with arguments. This holds on ESPHome
   2026.9 and on 2026.11.0: its `play(Ts... x)` does not match the base
   class `play(const Ts &...x)`. The action refuses while an update runs. It does not compare versions.
+  formatBCE fixed the signature in their repository (issue 112), so a
+  release after 2026.11.2 can use the component action.
+- `xvf_flash` has limits that the component gives. `start_dfu_update()` has
+  no guard against a second call. The update runs next to the LED, beam,
+  and mute polls, which the component does not expect. After a failed update
+  the component stops its `loop()` until the next reboot. The firmware
+  already updates the XVF3800 at boot when the version differs, so use
+  `xvf_flash` only to write the image again.
 - The DFU triggers of the component (`on_begin`, `on_progress`, `on_end`,
   `on_error`) set two diagnostic entities: `text_sensor.xvf3800_update`
   (`flashing`, `done`, or `error N`) and `sensor.xvf3800_update_progress`
