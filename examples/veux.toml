@@ -56,7 +56,7 @@ number.agc_max_gain_comms = 96
 select.wake_word_sensitivity = "Slightly sensitive"
 # Speaker level: the volume first, then the output stage in 1 dB steps.
 # A high gain with the volume near 1 clips. Output gain is in the satellite
-# firmware config, not in the formatBCE packages; see docs/devices/esphome.md.
+# firmware config, not in the formatBCE packages (Respeaker-ESPHome-integration); see docs/devices/esphome.md.
 media_player.media_player.volume = 1.0
 number.output_gain = 0
 

@@ -17,8 +17,10 @@ and when to change it.
 source = "https://..."
 ```
 
-- `esphome.toml`: the formatBCE XVF3800 satellite entities (packages at
-  542a05d), plus `number.output_gain` from the satellite firmware config.
+- `esphome.toml`: the formatBCE XVF3800 satellite entities (packages of the
+  earlier repository at 542a05d; the firmware has moved to
+  Respeaker-ESPHome-integration, and the citations stay valid as history),
+  plus `number.output_gain` from the satellite firmware config.
 - `xvf3800-usb.toml`: the XVF3800 USB commands in `xvf3800/commands.rs`.
   A raw XVF3800 parameter on the ESPHome link has the same ID, so it gets
   the USB entry when `esphome.toml` has none.

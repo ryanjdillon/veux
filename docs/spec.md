@@ -325,7 +325,8 @@ Verify each item on real hardware before you rely on it.
    device is busy. Metering beside the satellite needs `dsnoop`.
 6. **ESPHome Rust client.** Check the available crates for the native API
    with Noise encryption. If none is good, implement the protocol subset.
-7. **Existing ESPHome XVF3800 component.** Resolved. It uses I2C, exposes
-   few parameters, and supports DFU. See `docs/devices/xvf3800.md`.
+7. **Existing ESPHome XVF3800 component.** Resolved. It is the
+   `respeaker_xvf3800` component of formatBCE Respeaker-ESPHome-integration.
+   It uses I2C, exposes few parameters, and supports DFU. See `docs/devices/xvf3800.md`.
 8. **USB permissions.** Write a udev rule for the XVF3800 vendor and product
    IDs. Run the helper without root.
