@@ -8,6 +8,10 @@
 A terminal UI to configure ReSpeaker audio devices across a network, with the desired
 state in `veux.toml`.
 
+veux works with the [formatBCE firmware](https://github.com/formatBCE/Respeaker-ESPHome-integration)
+and the control protocol of the XMOS XVF3800. It is an independent project: Seeed Studio, XMOS, and
+formatBCE do not endorse it.
+
 **[Documentation](docs/README.md)** ·
 **[Devices](docs/devices/README.md)** ·
 **[Development](docs/development/README.md)**
@@ -15,6 +19,21 @@ state in `veux.toml`.
 <p align="center">
   <img src="docs/assets/demo.gif" alt="veux reading a desk satellite, browsing its parameters, editing an option, and showing the firmware and test tone" width="900">
 </p>
+
+## Features
+
+- **Profiles:** keep the desired settings of all devices in one `veux.toml`. See what differs,
+  apply it, and keep it.
+- **Three values:** compare the profile, runtime, and persisted value of each parameter.
+- **Gain and audio tuning:** adjust capture and output gain, AGC, echo cancellation, and noise
+  suppression. The TUI shows the valid range.
+- **Lighting:** set the LED ring effect and colours on the XVF3800 and the 2-Mics HAT.
+- **Explanations:** each parameter says what it does, what it accepts, and how it keeps its value.
+- **Live monitoring:** microphone levels, and direction and speech where the link reports them.
+- **Firmware updates:** show the firmware version, and flash the XVF3800 over USB or from an
+  ESPHome build.
+- **Test tones:** play a tone on the left or right channel to check wiring and levels.
+- **Remote devices:** reach devices on other hosts over SSH. veux uploads its own helper.
 
 ## How it works
 
