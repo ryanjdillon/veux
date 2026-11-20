@@ -1,0 +1,279 @@
+# ESPHome additions that veux needs on an XVF3800 satellite.
+#
+# The satellite firmware is formatBCE Respeaker-XVF3800-ESPHome-integration.
+# It has no way to read or write the raw XVF3800 parameters, or to run a DFU
+# update from the API. This file adds three API actions for that, and the
+# entities that report the update. Merge each part into your satellite config.
+#
+# Tested with formatBCE ref 542a05d44b6eb2c646a6ba0acd3e0cf2e6edcfab and
+# ESPHome 2026.9. The actions call the I2C device of the formatBCE component
+# (`id: respeaker`). If your config gives it another id, change it here.
+#
+# Merge this file into the satellite config. Do not use it as a full config:
+# it has no wifi, name, or board settings.
+
+# Part 1. Add the actions under the `api:` block of your config. Keep your
+# own `encryption: key:` there: veux uses that key.
+api:
+  # Raw XVF3800 parameter access for veux.
+  # The caller gives the resource ID and the command ID, as in the XVF3800
+  # control protocol, and veux encodes the values.
+  # - xvf_get sends one read over I2C (command | 0x80, length + 1) and
+  #   returns {"reply": [status, payload...]}. veux handles the status and
+  #   retries a busy one, as on USB: some parameters stay busy for hundreds
+  #   of milliseconds, which is too long to block the ESP32 main loop.
+  # - xvf_set writes {resid, cmd, length, payload}. The payload is a hex
+  #   string ("0a1b"): an int[] argument cannot go through api.respond. It
+  #   sets runtime values only; nothing is saved to the XVF3800 flash.
+  actions:
+    - action: xvf_get
+      supports_response: only
+      variables:
+        resid: int
+        cmd: int
+        length: int
+      then:
+        - lambda: |-
+            id(xvf_error).clear();
+            id(xvf_reply).clear();
+            if (resid < 0 || resid > 255 || cmd < 0 || cmd > 127 || length < 0 || length > 64) {
+              id(xvf_error) = "argument out of range";
+              return;
+            }
+            const uint8_t request[] = {(uint8_t) resid, (uint8_t) (cmd | 0x80), (uint8_t) (length + 1)};
+            std::vector<uint8_t> reply(length + 1);
+            if (id(respeaker).write(request, sizeof(request)) != i2c::ERROR_OK) {
+              id(xvf_error) = "I2C write failed";
+              return;
+            }
+            if (id(respeaker).read(reply.data(), reply.size()) != i2c::ERROR_OK) {
+              id(xvf_error) = "I2C read failed";
+              return;
+            }
+            id(xvf_reply) = reply;
+        - api.respond:
+            success: !lambda return id(xvf_error).empty();
+            error_message: !lambda return id(xvf_error);
+            data: !lambda |-
+              JsonArray reply = root["reply"].to<JsonArray>();
+              for (uint8_t b : id(xvf_reply)) {
+                reply.add(b);
+              }
+    - action: xvf_set
+      supports_response: status
+      variables:
+        resid: int
+        cmd: int
+        payload: string
+      then:
+        - lambda: |-
+            id(xvf_error).clear();
+            const std::string hex(payload.c_str(), payload.size());
+            if (resid < 0 || resid > 255 || cmd < 0 || cmd > 127 || hex.size() % 2 != 0 ||
+                hex.size() > 128) {
+              id(xvf_error) = "argument out of range";
+              return;
+            }
+            std::vector<uint8_t> request = {(uint8_t) resid, (uint8_t) cmd, (uint8_t) (hex.size() / 2)};
+            for (size_t i = 0; i < hex.size(); i += 2) {
+              char *end = nullptr;
+              const std::string pair = hex.substr(i, 2);
+              const long b = strtol(pair.c_str(), &end, 16);
+              if (end != pair.c_str() + 2) {
+                id(xvf_error) = "payload is not hex";
+                return;
+              }
+              request.push_back((uint8_t) b);
+            }
+            if (id(respeaker).write(request.data(), request.size()) != i2c::ERROR_OK) {
+              id(xvf_error) = "I2C write failed";
+            }
+        - api.respond:
+            success: !lambda return id(xvf_error).empty();
+            error_message: !lambda return id(xvf_error);
+    # Write the XVF3800 image of this build (respeaker_xvf3800 firmware:) to
+    # the XVF3800 over I2C DFU. It does not compare versions. The update runs
+    # in the main loop; "XVF3800 update" and "XVF3800 update progress" report
+    # it. veux asks for a confirmation first.
+    - action: xvf_flash
+      supports_response: status
+      then:
+        # The respeaker_xvf3800.flash action does not compile in an action
+        # with arguments on ESPHome 2026.9 (its play() signature is old), so
+        # call the component directly.
+        - lambda: |-
+            id(xvf_error).clear();
+            if (id(xvf_update_state).state == "flashing") {
+              id(xvf_error) = "an update is running";
+              return;
+            }
+            id(respeaker).start_dfu_update();
+        - api.respond:
+            success: !lambda return id(xvf_error).empty();
+            error_message: !lambda return id(xvf_error);
+
+# Part 2. Add these globals to the `globals:` block of your config. The
+# actions use them to pass an error or a reply to `api.respond`.
+globals:
+  # The result of the last xvf_get, for its response.
+  - id: xvf_reply
+    type: std::vector<uint8_t>
+    restore_value: false
+  - id: xvf_error
+    type: std::string
+    restore_value: false
+  # Only for the optional Part 4. It is true once the boot delay has passed.
+  - id: output_gain_ready
+    type: bool
+    restore_value: false
+    initial_value: "false"
+
+# Part 3. Report the XVF3800 firmware update of `xvf_flash`. The triggers
+# merge into the `respeaker_xvf3800: firmware:` config of the formatBCE
+# package. veux follows the two entities below during an update.
+respeaker_xvf3800:
+  firmware:
+    on_begin:
+      - text_sensor.template.publish:
+          id: xvf_update_state
+          state: flashing
+    on_progress:
+      - sensor.template.publish:
+          id: xvf_update_progress
+          state: !lambda return x;
+    on_end:
+      - sensor.template.publish:
+          id: xvf_update_progress
+          state: 100
+      - text_sensor.template.publish:
+          id: xvf_update_state
+          state: done
+    on_error:
+      - text_sensor.template.publish:
+          id: xvf_update_state
+          state: !lambda return str_sprintf("error %u", x);
+
+sensor:
+  - platform: template
+    id: xvf_update_progress
+    name: XVF3800 update progress
+    unit_of_measurement: "%"
+    accuracy_decimals: 0
+    entity_category: diagnostic
+
+text_sensor:
+  - platform: template
+    id: xvf_update_state
+    name: XVF3800 update
+    entity_category: diagnostic
+
+# Part 4 (optional). Add the `number.output_gain` entity. Skip it if you do
+# not need more speaker level than the media player volume gives. It is not
+# part of the formatBCE packages. veux shows it when the device lists it.
+#
+# It sets the output stage of the TLV320AIC3104 codec, 0 to 9 dB in 1 dB
+# steps. It adds to the media player volume, which sets only the DAC level
+# (0 dB at 100 %). A high gain with the volume near 100 % clips. The gain
+# goes to registers 0x33, 0x3A, 0x41, 0x48, 0x56, and 0x5D (bits D7 to D4).
+# The XVF3800 resets the codec on its own reboot. So the config applies the
+# gain 5 s after boot and again every 60 s.
+#
+# Part 4 needs the `output_gain_ready` global of Part 2. It also needs an
+# I2C device with the id `aic3104_dac`. The formatBCE package defines it in
+# its `hardware.yaml` (`audio_dac:`, platform `aic3104`). If your config
+# gives the codec another id, change it in the script below. Merge each block
+# into the matching block of your config.
+
+# 4a. The entity. Add it under the `number:` block.
+number:
+  - platform: template
+    name: "Output gain"
+    id: output_gain
+    icon: mdi:volume-plus
+    entity_category: config
+    unit_of_measurement: dB
+    mode: slider
+    min_value: 0
+    max_value: 9
+    step: 1
+    initial_value: 0
+    restore_value: true
+    optimistic: true
+    on_value:
+      - if:
+          condition:
+            lambda: return id(output_gain_ready);
+          then:
+            - script.execute:
+                id: apply_output_gain
+                gain_db: !lambda return (int) lroundf(x);
+                log_routes: false
+
+# 4b. The script that writes the gain to the codec. Add it under `script:`.
+script:
+  - id: apply_output_gain
+    mode: restart
+    parameters:
+      gain_db: int
+      log_routes: bool
+    then:
+      - lambda: |-
+          static const uint8_t level_regs[] = {0x33, 0x3A, 0x41, 0x48, 0x56, 0x5D};
+          static const uint8_t route_regs[] = {0x2F, 0x40, 0x52, 0x5C};
+          const uint8_t level = (uint8_t) clamp<int>(gain_db, 0, 9);
+          auto *dac = id(aic3104_dac);
+          if (!dac->write_byte(0x00, 0x00)) {
+            ESP_LOGW("output_gain", "page 0 select failed");
+            return;
+          }
+          for (uint8_t reg : level_regs) {
+            uint8_t old_value;
+            if (!dac->read_byte(reg, &old_value)) {
+              ESP_LOGW("output_gain", "read 0x%02X failed", reg);
+              continue;
+            }
+            const uint8_t new_value = (old_value & 0x0F) | (level << 4);
+            if (new_value == old_value) {
+              continue;
+            }
+            if (!dac->write_byte(reg, new_value)) {
+              ESP_LOGW("output_gain", "write 0x%02X failed", reg);
+              continue;
+            }
+            ESP_LOGI("output_gain", "level 0x%02X: 0x%02X -> 0x%02X (+%u dB)", reg, old_value,
+                     new_value, level);
+          }
+          if (log_routes) {
+            for (uint8_t reg : route_regs) {
+              uint8_t value;
+              if (dac->read_byte(reg, &value)) {
+                ESP_LOGI("output_gain", "route 0x%02X: 0x%02X (%s, attenuation code %u)", reg,
+                         value, (value & 0x80) ? "on" : "off", value & 0x7F);
+              }
+            }
+          }
+
+# 4c. Apply the gain 5 s after boot. Merge this into your `esphome:` block.
+esphome:
+  on_boot:
+    - priority: -100
+      then:
+        - delay: 5s
+        - lambda: id(output_gain_ready) = true;
+        - script.execute:
+            id: apply_output_gain
+            gain_db: !lambda return (int) lroundf(id(output_gain).state);
+            log_routes: true
+
+# 4d. Apply the gain again every 60 s. Add it under `interval:`.
+interval:
+  - interval: 60s
+    then:
+      - if:
+          condition:
+            lambda: return id(output_gain_ready);
+          then:
+            - script.execute:
+                id: apply_output_gain
+                gain_db: !lambda return (int) lroundf(id(output_gain).state);
+                log_routes: false

@@ -1,0 +1,114 @@
+# Explanations of the ESPHome entities of the formatBCE XVF3800 satellite
+# (packages at 542a05d). See docs/development/explanations.md.
+
+# Plain-language explanations of the XVF3800 satellite ESPHome entities.
+# Source: formatBCE/Respeaker-XVF3800-ESPHome-integration @ 542a05d44b6eb2c646a6ba0acd3e0cf2e6edcfab,
+# XMOS XVF3800 user guide (XM-014888-PC) control command appendix, and Seeed's xvf_host.py.
+
+["xvf3800/esphome/number.agc_max_gain_comms"]
+text = """
+Sets the highest gain that the automatic gain control (AGC) of the comms output can apply. It writes XMOS PP_AGCMAXGAIN (resid 17, cmd 11), a linear factor. The AGC raises quiet speech toward a target level, up to this limit. A higher value makes distant speech louder, but also raises background noise. It affects speech-to-text only with the default DSP route. It does not change the ASR output or wake word. Default: 32 (XMOS default 125; Seeed tunes 64). Range here: 1 to 125. It applies at once and again after each boot.
+"""
+source = "https://github.com/formatBCE/Respeaker-XVF3800-ESPHome-integration/blob/542a05d44b6eb2c646a6ba0acd3e0cf2e6edcfab/packages/hardware.yaml#L156-L170"
+
+["xvf3800/esphome/number.asr_output_gain"]
+text = """
+Sets a fixed gain on the DSP's ASR output, the beam tuned for speech recognition. It writes XMOS AEC_ASROUTGAIN (resid 33, cmd 36), a linear factor. The ASR output always feeds the wake word detector. It feeds speech-to-text only when DSP route is "ASR to STT and wake word". A higher value helps far-field speech. Too high a value makes close speech clip. The gain is fixed, so it does not adapt to the speaker. Default: 1.0. Range here: 1.0 to 8.0. It applies at once and again after each boot.
+"""
+source = "https://github.com/formatBCE/Respeaker-XVF3800-ESPHome-integration/blob/542a05d44b6eb2c646a6ba0acd3e0cf2e6edcfab/packages/hardware.yaml#L141-L155"
+
+["xvf3800/esphome/number.output_gain"]
+text = """
+Output-stage gain of the TLV320AIC3104 codec, 0 to 9 dB in 1 dB steps. It adds to the media player volume, which only sets the DAC level and is 0 dB at 100 %. It applies to the 3.5 mm jack and the speaker output (registers 0x33, 0x3A, 0x41, 0x48, 0x56, 0x5D, bits D7 to D4). The firmware applies it 5 s after boot and again each minute, because the XVF3800 resets the codec. Default: 0 dB. A high gain with the volume near 100 % clips. This entity comes from the satellite firmware config, not from the formatBCE packages.
+"""
+source = "https://github.com/torvalds/linux/blob/master/sound/soc/codecs/tlv320aic3x.c"
+
+["xvf3800/esphome/media_player.media_player.volume"]
+text = """
+Playback volume, 0 to 1. On the XVF3800 the aic3104 component maps it to the codec DAC volume: 1 is 0 dB, and each step down of 1/128 is 0.5 dB less, to -64 dB at 0. It does not change the output-stage gain; see "Output gain". The package limits it with volume_min 0 and volume_max 1.
+"""
+source = "https://github.com/formatBCE/Respeaker-XVF3800-ESPHome-integration/blob/542a05d44b6eb2c646a6ba0acd3e0cf2e6edcfab/packages/voice-assistant.yaml"
+
+["xvf3800/esphome/select.alarm_action"]
+text = """
+Selects what happens when the alarm time comes and "Alarm on" is on. "Play sound" rings the timer sound on the device. "Send event" sends the Home Assistant event esphome.alarm_ringing and plays nothing. "Sound and event" does both. The sound repeats until you say the wake word or "stop", or until 15 minutes pass. The device checks the alarm once a minute. Default: "Play sound". The device keeps the choice across reboots.
+"""
+source = "https://github.com/formatBCE/Respeaker-XVF3800-ESPHome-integration/blob/542a05d44b6eb2c646a6ba0acd3e0cf2e6edcfab/packages/timers-alarm.yaml#L134-L149"
+
+["xvf3800/esphome/select.dsp_route"]
+text = """
+Selects which DSP output feeds speech-to-text (STT). The wake word always gets the ASR output. "Comms to STT, ASR to wake word" sends the comms output to STT. The comms output is the auto-select beam with noise suppression and AGC. "ASR to STT and wake word" sends the ASR output to both. The ASR output has a fixed gain and is tuned for recognition. It writes XMOS AUDIO_MGR_OP_L (resid 35, cmd 15) as (8,0) or (7,3). Default: "Comms to STT, ASR to wake word". It applies at once.
+"""
+source = "https://github.com/formatBCE/Respeaker-XVF3800-ESPHome-integration/blob/542a05d44b6eb2c646a6ba0acd3e0cf2e6edcfab/packages/hardware.yaml#L172-L186"
+
+["xvf3800/esphome/select.led_ring_color_preset"]
+text = """
+Sets the colour of the LED ring to a fixed preset. The colour shows while the device waits, listens, thinks and replies, during timers, and when idle if the "LED Ring" light is on. Error and "not ready" states always use red. A preset changes only the colour; it does not turn the light on. "Custom" changes nothing and keeps the colour from the light or the set_led_color action. Default: "Custom". The device keeps the choice across reboots.
+"""
+source = "https://github.com/formatBCE/Respeaker-XVF3800-ESPHome-integration/blob/542a05d44b6eb2c646a6ba0acd3e0cf2e6edcfab/packages/leds.yaml#L866-L917"
+
+["xvf3800/esphome/select.logger_level"]
+text = """
+Sets how much the ESP32 writes to its log. It is the ESPHome logger select, and it does not touch the XVF3800. A more detailed level helps to find faults, but uses more CPU and network. ESPHome only offers levels up to the level built into the firmware. Here that is INFO, so you cannot select DEBUG or VERBOSE without a rebuild. The entity is disabled by default. It is not known from these sources if the choice survives a reboot.
+"""
+source = "https://github.com/formatBCE/Respeaker-XVF3800-ESPHome-integration/blob/542a05d44b6eb2c646a6ba0acd3e0cf2e6edcfab/packages/base.yaml#L217-L221"
+
+["xvf3800/esphome/select.wake_word_sensitivity"]
+text = """
+Sets how easily the on-device wake word detector triggers. It sets the probability cutoff of the okay_nabu, hey_jarvis and hey_mycroft models. "Slightly sensitive" needs the most certainty and gives the fewest false wakes. "Very sensitive" catches quieter or distant speech, but wakes more often by mistake. For example, okay_nabu goes from 0.85 to 0.56. The kenobi model is not changed (inferred from the code). It does not touch the XVF3800. Default: "Slightly sensitive". It applies at once.
+"""
+source = "https://github.com/formatBCE/Respeaker-XVF3800-ESPHome-integration/blob/542a05d44b6eb2c646a6ba0acd3e0cf2e6edcfab/packages/voice-assistant.yaml#L53-L83"
+
+["xvf3800/esphome/sensor.next_timer"]
+text = """
+Shows the seconds left on the active timer that ends first. It is read-only. A value of -1 means no timer is active. It updates when a timer starts, changes or is cancelled, and every 5 seconds while a timer runs. So the value can be up to 5 seconds old. The entity is disabled by default.
+"""
+source = "https://github.com/formatBCE/Respeaker-XVF3800-ESPHome-integration/blob/542a05d44b6eb2c646a6ba0acd3e0cf2e6edcfab/packages/timers-alarm.yaml#L112-L121"
+
+["xvf3800/esphome/switch.alarm_on"]
+text = """
+Turns the alarm clock on or off. When on, the device compares the "Alarm time" with the Home Assistant time once a minute. When they agree, it does the "Alarm action". Setting a new alarm time turns this switch on. Nothing turns it off after the alarm rings, so the alarm repeats each day at the same time (inferred from the code). Default: off. The device keeps the state across reboots.
+"""
+source = "https://github.com/formatBCE/Respeaker-XVF3800-ESPHome-integration/blob/542a05d44b6eb2c646a6ba0acd3e0cf2e6edcfab/packages/timers-alarm.yaml#L104-L110"
+
+["xvf3800/esphome/switch.beam_lock"]
+text = """
+A beam is a direction in which the microphone array listens. Normally the XVF3800 picks the best beam itself and can switch quickly (auto-select). When this switch is on, the device pins both fixed beams to the speaker's last direction when the wake word triggers. It writes AEC_FIXEDBEAMSAZIMUTH_VALUES and AEC_FIXEDBEAMSONOFF=1. The lock ends when you stop speaking. On: other sounds cannot pull the beam away, but a speaker who moves can be lost. Off: the beam follows a moving speaker, but noise can steal it. Default: off.
+"""
+source = "https://github.com/formatBCE/Respeaker-XVF3800-ESPHome-integration/blob/542a05d44b6eb2c646a6ba0acd3e0cf2e6edcfab/esphome/components/respeaker_xvf3800/respeaker_xvf3800.cpp#L463-L499"
+
+["xvf3800/esphome/switch.microphone_mute"]
+text = """
+Mutes or unmutes the microphones. It sets XVF3800 GPO pin X0D30 high or low (GPO_WRITE_VALUE, resid 20, cmd 1). Seeed documents that this pin also lights the mute LED. While muted, the device ignores the wake word. The device reads the pin each second, so the switch follows changes made elsewhere. When the device first connects to Home Assistant after boot, it turns mute off. It applies at once.
+"""
+source = "https://github.com/formatBCE/Respeaker-XVF3800-ESPHome-integration/blob/542a05d44b6eb2c646a6ba0acd3e0cf2e6edcfab/packages/hardware.yaml#L89-L117"
+
+["xvf3800/esphome/switch.mute_unmute_sound"]
+text = """
+Turns the mute sounds on or off. When on, the device plays a short sound when the microphone is muted and another when it is unmuted. The device does not play them while it starts up. It does not change the microphones or the XVF3800. Default: on. The device keeps the state across reboots.
+"""
+source = "https://github.com/formatBCE/Respeaker-XVF3800-ESPHome-integration/blob/542a05d44b6eb2c646a6ba0acd3e0cf2e6edcfab/packages/voice-assistant.yaml#L26-L33"
+
+["xvf3800/esphome/switch.wake_sound"]
+text = """
+Turns the wake sound on or off. When on, the device plays a short sound when it hears the wake word. Then it waits 300 ms and starts listening for the command. When off, it starts listening at once, so you can speak sooner. It does not change the XVF3800. Default: on. The device keeps the state across reboots.
+"""
+source = "https://github.com/formatBCE/Respeaker-XVF3800-ESPHome-integration/blob/542a05d44b6eb2c646a6ba0acd3e0cf2e6edcfab/packages/voice-assistant.yaml#L34-L41"
+
+["xvf3800/esphome/text_sensor.current_device_time"]
+text = """
+Shows the device clock as HH:MM. It is read-only. The clock comes from Home Assistant. It updates each minute and after each time sync. The device uses the time zone from the set_time_zone action. Until that action runs, the time zone is UTC. It is not known from the code if Home Assistant also sends its own time zone.
+"""
+source = "https://github.com/formatBCE/Respeaker-XVF3800-ESPHome-integration/blob/542a05d44b6eb2c646a6ba0acd3e0cf2e6edcfab/packages/timers-alarm.yaml#L129-L132"
+
+["xvf3800/esphome/text_sensor.firmware_version"]
+text = """
+Shows the firmware version of the XVF3800 DSP as MAJOR.MINOR.PATCH. It is read-only. It does not show the ESP32 firmware. The device reads it with the DFU GETVERSION command (resid 240, cmd 88) every 120 seconds. It shows "Unknown" if the read fails. The pinned firmware is 1.0.7. At boot, if the DSP has another version, the device flashes 1.0.7 to the DSP.
+"""
+source = "https://github.com/formatBCE/Respeaker-XVF3800-ESPHome-integration/blob/542a05d44b6eb2c646a6ba0acd3e0cf2e6edcfab/packages/hardware.yaml#L118-L120"
+
+["xvf3800/esphome/text_sensor.next_timer_name"]
+text = """
+Shows the name of the active timer that ends first. It is read-only. It shows "-" when no timer is active. It updates when a timer starts, changes, is cancelled or ends. After a reboot it has no value until the first timer event (inferred from the code). The entity is disabled by default.
+"""
+source = "https://github.com/formatBCE/Respeaker-XVF3800-ESPHome-integration/blob/542a05d44b6eb2c646a6ba0acd3e0cf2e6edcfab/packages/timers-alarm.yaml#L124-L128"

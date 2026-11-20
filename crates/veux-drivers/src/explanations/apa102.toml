@@ -1,0 +1,25 @@
+# Explanations of the APA102 LED parameters of the ReSpeaker 2-Mics Pi HAT
+# v1.x. See docs/development/explanations.md and docs/devices/respeaker-2mic.md.
+#
+# Sources used:
+# - APA102 datasheet (Shiji Lighting), mirrored by Adafruit:
+#   https://cdn-shop.adafruit.com/product-files/2343/APA102C.pdf
+# - Seeed wiki: https://wiki.seeedstudio.com/ReSpeaker_2_Mics_Pi_HAT/
+
+["respeaker-2mic-v1/alsa/led.power"]
+text = """
+Turns the three LEDs on or off. Off sends black at brightness 0. The brightness and color stay as set, so on shows them again. The LEDs cannot report their state: veux shows the last value that it wrote, kept in ~/.cache/veux/leds.toml on the host. The LEDs go dark at power off. The LEDs need SPI0 (/dev/spidev0.0) on the host.
+"""
+source = "https://cdn-shop.adafruit.com/product-files/2343/APA102C.pdf"
+
+["respeaker-2mic-v1/alsa/led.brightness"]
+text = """
+The APA102 global brightness, 0 to 31. It sets the drive current of all three colors together, so it dims the LEDs without a change of color. 31 is full current. Low values look much dimmer than the number suggests, and a value below about 4 can show color steps. veux sends 8 when no value was written before.
+"""
+source = "https://cdn-shop.adafruit.com/product-files/2343/APA102C.pdf"
+
+["respeaker-2mic-v1/alsa/led.rgb"]
+text = """
+The color of all three LEDs as [red, green, blue], each 0 to 255. veux sends each LED frame as brightness, blue, green, red, which is the APA102 order. Use the brightness to dim, not lower color values, so that the color stays the same. White is [255, 255, 255].
+"""
+source = "https://cdn-shop.adafruit.com/product-files/2343/APA102C.pdf"

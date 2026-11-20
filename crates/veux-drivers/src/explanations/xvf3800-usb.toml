@@ -1,0 +1,751 @@
+# Explanations of the XVF3800 USB control commands (crates/veux-drivers/src/xvf3800/commands.rs).
+# See docs/development/explanations.md.
+
+# Plain-language explanations of the XVF3800 USB control parameters in veux.
+# Sources: XMOS XVF3800 user guide (XM-014888-PC) and the Seeed reSpeaker
+# XVF3800 repository. "XMOS default" is the generic XVF3800 default from the
+# XMOS command appendix. "Seeed default" is the value that Seeed tunes for
+# the reSpeaker board (Seeed host_control README).
+
+# ---------------------------------------------------------------- app (48)
+
+["xvf3800/usb/app.version"]
+text = """
+The firmware version as three numbers: major, minor, patch. Read it to know
+which commands the device has. Some commands need a later firmware, for
+example the LED ring mode (2.0.7) and the headphone and line out levels
+(2.1.0).
+"""
+source = "https://github.com/respeaker/reSpeaker_XVF3800_USB_4MIC_ARRAY/blob/master/xmos_firmwares/usb/readme.md"
+
+["xvf3800/usb/app.bld_msg"]
+text = """
+The build message, normally the name of the build configuration (for example the audio profile of the image).
+"""
+source = "https://github.com/respeaker/reSpeaker_XVF3800_USB_4MIC_ARRAY/blob/master/python_control/xvf_host.py"
+
+["xvf3800/usb/app.bld_host"]
+text = """
+The CI build host that built the firmware.
+"""
+source = "https://github.com/respeaker/reSpeaker_XVF3800_USB_4MIC_ARRAY/blob/master/python_control/xvf_host.py"
+
+["xvf3800/usb/app.bld_repo_hash"]
+text = """
+The Git hash of the sw_xvf3800 repository that the firmware was built from.
+"""
+source = "https://github.com/respeaker/reSpeaker_XVF3800_USB_4MIC_ARRAY/blob/master/python_control/xvf_host.py"
+
+["xvf3800/usb/app.bld_modified"]
+text = """
+Shows if the firmware was built from a tree with changes to the official release.
+"""
+source = "https://github.com/respeaker/reSpeaker_XVF3800_USB_4MIC_ARRAY/blob/master/python_control/xvf_host.py"
+
+["xvf3800/usb/app.boot_status"]
+text = """
+Shows if the firmware booted over SPI or from JTAG/flash.
+"""
+source = "https://github.com/respeaker/reSpeaker_XVF3800_USB_4MIC_ARRAY/blob/master/python_control/xvf_host.py"
+
+["xvf3800/usb/app.usb_bit_depth"]
+text = """
+The sample size of the USB audio stream: input, then output. Each value is
+16, 24, or 32 bits. More bits give more dynamic range but more USB data
+(inferred). A write reboots the chip and resets all other parameters to
+their defaults. Only the UA (USB audio) firmware uses it. The INT firmware
+ignores a write and reads 0, 0. Change it only when the host audio software
+needs a different sample format.
+"""
+source = "https://www.xmos.com/documentation/XM-014888-PC/html/modules/fwk_xvf/doc/user_guide/AA_control_command_appendix.html"
+
+["xvf3800/usb/aic3104.hp_level"]
+text = """
+The gain of the headphone output of the AIC3104 audio codec (the 3.5 mm
+jack, inferred). The range is 0 to 9 dB. A higher value makes the played
+audio louder. The default is 8 dB since firmware 2.1.0. Lower it if a
+connected speaker distorts. Distortion in the speaker harms echo
+cancellation (Seeed advises against a too-high speaker volume). Needs
+firmware 2.1.0 or later.
+"""
+source = "https://github.com/respeaker/reSpeaker_XVF3800_USB_4MIC_ARRAY/blob/master/xmos_firmwares/usb/readme.md"
+
+["xvf3800/usb/aic3104.lineout_level"]
+text = """
+The gain of the line output of the AIC3104 audio codec. The range is 0 to
+9 dB. A higher value gives a louder signal to the connected amplifier. The
+default is 8 dB since firmware 2.1.0. Lower it if the amplifier input
+clips (inferred). Needs firmware 2.1.0 or later.
+"""
+source = "https://github.com/respeaker/reSpeaker_XVF3800_USB_4MIC_ARRAY/blob/master/xmos_firmwares/usb/readme.md"
+
+# ---------------------------------------------------------------- aec (33)
+
+["xvf3800/usb/aec.shf_bypass"]
+text = """
+Bypasses the AEC (acoustic echo canceller). The sources give only the name
+"AEC bypass" and no default. With 1, the echo canceller is off, so sound
+from the device speaker stays in the microphone signal (inferred). Use it
+only to compare the audio with and without echo cancellation (inferred).
+"""
+source = "https://www.xmos.com/documentation/XM-014888-PC/html/modules/fwk_xvf/doc/user_guide/AA_control_command_appendix.html"
+
+["xvf3800/usb/aec.aecpathchange"]
+text = """
+Read-only flag. 1 means that path change detection (PCD) found a large
+change in the sound path from speaker to microphones, for example after
+someone moved the device. The AEC then adapts again, and the flag goes
+back to 0 when the AEC has adapted. PCD is off by default, so this flag
+stays 0 unless PCD is on.
+"""
+source = "https://www.xmos.com/documentation/XM-014888-PC/html/modules/fwk_xvf/doc/user_guide/04_tuning_the_application.html#path-change-detection"
+
+["xvf3800/usb/aec.hpfonoff"]
+text = """
+A high-pass filter on the microphone signals. It removes low-frequency
+noise such as rumble and hum. Values: 0 off, 1 70 Hz, 2 125 Hz, 3 150 Hz,
+4 180 Hz. A higher corner removes more low noise but also more of the low
+part of the voice. XMOS default: 2 (125 Hz). XMOS recommends the filter.
+Use a lower corner, or 0, only if the low voice range is necessary.
+"""
+source = "https://www.xmos.com/documentation/XM-014888-PC/html/modules/fwk_xvf/doc/user_guide/04_tuning_the_application.html#initial-parameter-setting"
+
+["xvf3800/usb/aec.aecsilencelevel"]
+text = """
+A power threshold for the far-end (reference) signal. Below it, the AEC
+treats the reference as silence and does not adapt. This stops the AEC
+from adapting to noise on the reference line. Two values: the set value
+and the current value. Set it 1 to 2 % above the measured power of
+silence on the reference. Too high, and the AEC can miss quiet playback
+(inferred). Defaults conflict: 1e-9 (appendix) and 1e-8, -80 dBFS (tuning
+guide).
+"""
+source = "https://www.xmos.com/documentation/XM-014888-PC/html/modules/fwk_xvf/doc/user_guide/04_tuning_the_application.html#silence-level"
+
+["xvf3800/usb/aec.aecconverged"]
+text = """
+Read-only flag. 1 means that the AEC has learned the echo path from
+speaker to microphones. The AEC needs far-end audio (playback) to learn.
+Expect 1 within about 30 seconds of playback. Once 1, the flag does not go
+back to 0, even after a path change. If it stays 0, the echo canceller is
+not effective yet.
+"""
+source = "https://www.xmos.com/documentation/XM-014888-PC/html/modules/fwk_xvf/doc/user_guide/04_tuning_the_application.html#aec-operation"
+
+["xvf3800/usb/aec.aecemphasisonoff"]
+text = """
+A boost of high frequencies on the microphone inputs. It helps the AEC
+learn faster when the playback has much more bass than treble. Values: 0
+off, 1 on, 2 on for a reference with strongly boosted bass (for example
+from an equalizer). Use 0 if the playback spectrum is similar at 8 kHz, 1
+if the gap is about 8 dB or more, 2 if it is about 40 dB or more. XMOS
+default: 1.
+"""
+source = "https://www.xmos.com/documentation/XM-014888-PC/html/modules/fwk_xvf/doc/user_guide/04_tuning_the_application.html#emphasis"
+
+["xvf3800/usb/aec.far_extgain"]
+text = """
+Tells the AEC how much gain (in dB) is applied to the playback signal
+outside the chip, for example a volume control. Set it to match that
+external gain, for example -6 for 6 dB of attenuation. The USB (UA)
+firmware sets it automatically from the host volume. The I2S firmware
+needs a manual value. XMOS default: 0 dB.
+"""
+source = "https://www.xmos.com/documentation/XM-014888-PC/html/modules/fwk_xvf/doc/user_guide/04_tuning_the_application.html#initial-parameter-setting"
+
+["xvf3800/usb/aec.pcd_couplingi"]
+text = """
+The sensitivity of path change detection (PCD). PCD finds a large change
+in the speaker-to-microphone path, such as a moved device. It then
+suppresses near-end sound during playback while the AEC adapts again.
+Range 0 to 1. A lower value detects changes faster, but can trigger
+falsely when both sides talk. A value outside 0 to 1 turns PCD off. XMOS
+default: off. A fixed installation does not need PCD.
+"""
+source = "https://www.xmos.com/documentation/XM-014888-PC/html/modules/fwk_xvf/doc/user_guide/04_tuning_the_application.html#path-change-detection"
+
+["xvf3800/usb/aec.pcd_minthr"]
+text = """
+The minimum threshold of path change detection. Range 0 to 0.02. A lower
+value makes PCD more sensitive on devices with high echo-loss (ERLE, the
+amount of echo the AEC removes). Defaults conflict: 0.005 (appendix) and
+0.02 (tuning guide). It has an effect only when PCD is on
+(aec.pcd_couplingi in 0 to 1, inferred).
+"""
+source = "https://www.xmos.com/documentation/XM-014888-PC/html/modules/fwk_xvf/doc/user_guide/04_tuning_the_application.html#path-change-detection"
+
+["xvf3800/usb/aec.pcd_maxthr"]
+text = """
+The maximum threshold of path change detection. Range 0.025 to 0.2. A
+lower value makes PCD more sensitive on devices with low echo-loss (ERLE).
+Defaults conflict: 0.1 (appendix) and 0.2 (tuning guide). It has an
+effect only when PCD is on (inferred).
+"""
+source = "https://www.xmos.com/documentation/XM-014888-PC/html/modules/fwk_xvf/doc/user_guide/04_tuning_the_application.html#path-change-detection"
+
+["xvf3800/usb/aec.rt60"]
+text = """
+Read-only. The estimate of the room reverberation time (RT60): the time
+for a sound to decay by 60 dB. The valid range is 0.25 to 0.9 s. A
+negative value means that the estimate is not valid. A long RT60 means an
+echoic room. XMOS uses it to check a room for tuning, for example below
+0.3 s to train the non-linear echo model.
+"""
+source = "https://www.xmos.com/documentation/XM-014888-PC/html/modules/fwk_xvf/doc/user_guide/AA_control_command_appendix.html"
+
+["xvf3800/usb/aec.asroutonoff"]
+text = """
+Selects the AEC residual / ASR output (mux category 7). 0: one channel per
+microphone, with echo removed but no beamforming. 1: ASR output, one
+channel per beam, made for a speech recognition engine. XMOS default: 0.
+Seeed says that the right channel of the board carries the ASR output of
+the auto-selected beam. Use 1 for speech recognition.
+"""
+source = "https://github.com/respeaker/reSpeaker_XVF3800_USB_4MIC_ARRAY/blob/master/python_control/xvf_host.py"
+
+["xvf3800/usb/aec.asroutgain"]
+text = """
+A fixed linear gain on the ASR output. It sets the input level for the
+speech recognition engine. It applies only when aec.asroutonoff is 1.
+Range 0 to 1000. Default 1.0 (XMOS and Seeed). Raise it if the speech
+recognizer gets too quiet a signal. Too high a value can clip (inferred).
+"""
+source = "https://www.xmos.com/documentation/XM-014888-PC/html/modules/fwk_xvf/doc/user_guide/AA_control_command_appendix.html"
+
+["xvf3800/usb/aec.fixedbeamsonoff"]
+text = """
+Fixed beam mode. Normally (0) the two focused beams follow talkers that
+the free-running beam finds. With 1, both focused beams point at fixed
+directions (aec.fixedbeamsazimuth_values and
+aec.fixedbeamselevation_values). Use it when talker positions are known
+and do not change. Both beams are fixed, not one. XMOS default: 0 (off).
+"""
+source = "https://www.xmos.com/documentation/XM-014888-PC/html/modules/fwk_xvf/doc/user_guide/03_using_the_host_application.html"
+
+["xvf3800/usb/aec.fixedbeamnoisethr"]
+text = """
+Two thresholds, one per fixed beam, range 0 to 1. They control when the
+noise canceller updates in fixed beam mode. A higher value lets it update
+when the free-running beam is close to the fixed beam. A lower value lets
+it update only when the free-running beam is further away. XMOS default:
+0.4, 0.4. It applies only in fixed beam mode.
+"""
+source = "https://www.xmos.com/documentation/XM-014888-PC/html/modules/fwk_xvf/doc/user_guide/03_using_the_host_application.html"
+
+["xvf3800/usb/aec.num_mics"]
+text = """
+Read-only. The number of microphone inputs to the AEC (4 on the reSpeaker
+board, inferred from the array geometry).
+"""
+source = "https://github.com/respeaker/reSpeaker_XVF3800_USB_4MIC_ARRAY/blob/master/python_control/xvf_host.py"
+
+["xvf3800/usb/aec.num_farends"]
+text = """
+Read-only. The number of far-end (reference) inputs to the AEC. The XVF3800 uses one mono reference.
+"""
+source = "https://www.xmos.com/documentation/XM-014888-PC/html/modules/fwk_xvf/doc/datasheet/03_audio_pipeline.html"
+
+["xvf3800/usb/aec.mic_array_type"]
+text = """
+Read-only. The microphone layout: 1 linear, 2 square ("squarecular"). The
+firmware build sets it. It cannot change during operation. A linear array
+reports directions from 0 to 180 degrees only.
+"""
+source = "https://www.xmos.com/documentation/XM-014888-PC/html/modules/fwk_xvf/doc/user_guide/03_using_the_host_application.html"
+
+["xvf3800/usb/aec.mic_array_geo"]
+text = """
+Read-only. The positions of the microphones: x, y, z in metres for each of
+the four microphones. The beamformer uses this geometry. The XMOS square
+layout puts the microphones 66 mm apart on each side, which gives
+coordinates of about plus or minus 0.033 m (inferred).
+"""
+source = "https://www.xmos.com/documentation/XM-014888-PC/html/modules/fwk_xvf/doc/user_guide/03_using_the_host_application.html"
+
+["xvf3800/usb/aec.azimuth_values"]
+text = """
+Read-only. The direction (azimuth, in radians) of four beams: focused beam
+1, focused beam 2, the free-running beam, and the auto-selected beam. The
+free-running beam scans the room for new talkers. A focused beam then
+turns to that talker. The auto-selected beam is the one that goes to the
+output, and the LED direction display uses it. The focused beams move
+slowly. The free-running beam reacts fast and can also follow noise.
+"""
+source = "https://github.com/respeaker/reSpeaker_XVF3800_USB_4MIC_ARRAY/blob/master/host_control/README.md"
+
+["xvf3800/usb/aec.spenergy_values"]
+text = """
+Read-only. Speech energy of each beam, in the same order as
+aec.azimuth_values. It works like voice activity detection. A value above
+0 means the beam probably contains speech. A higher value means louder or
+closer speech. Noise, echo, and reverberation can make the value lower.
+In fixed beam mode, the first two values are for the fixed beams.
+"""
+source = "https://www.xmos.com/documentation/XM-014888-PC/html/modules/fwk_xvf/doc/user_guide/03_using_the_host_application.html"
+
+["xvf3800/usb/aec.fixedbeamsazimuth_values"]
+text = """
+The horizontal direction (azimuth, in radians) of fixed beam 1 and fixed
+beam 2. It applies only when aec.fixedbeamsonoff is 1. Point each beam at a
+known talker position. The reported direction in aec.azimuth_values can
+differ a little, because it comes from the acoustic measurement. XMOS
+default: 0, 0.
+"""
+source = "https://www.xmos.com/documentation/XM-014888-PC/html/modules/fwk_xvf/doc/user_guide/03_using_the_host_application.html"
+
+["xvf3800/usb/aec.fixedbeamselevation_values"]
+text = """
+The vertical angle (elevation, in radians) of fixed beam 1 and fixed beam
+2. It applies only in fixed beam mode. Use it when a talker is above or
+below the plane of the microphones (inferred). XMOS default: 0, 0.
+"""
+source = "https://www.xmos.com/documentation/XM-014888-PC/html/modules/fwk_xvf/doc/user_guide/03_using_the_host_application.html"
+
+["xvf3800/usb/aec.fixedbeamsgating"]
+text = """
+Gating of the fixed beams. With 1, a fixed beam with low speech energy is
+muted, and only one fixed beam is active at a time. If both beams have
+enough energy, the beam with less energy is muted. Use it to pass only the
+active talker and silence the other position. XMOS default: 0 (off). It
+applies only in fixed beam mode.
+"""
+source = "https://www.xmos.com/documentation/XM-014888-PC/html/modules/fwk_xvf/doc/user_guide/03_using_the_host_application.html"
+
+# ---------------------------------------------------------- audio_mgr (35)
+
+["xvf3800/usb/audio_mgr.mic_gain"]
+text = """
+A gain on all four microphone signals before the AEC and beamformer.
+Tune it so that the microphone peak is 6 dB below the reference peak.
+Too much gain can make the AEC unstable and can clip the microphones.
+Too little gives a weak, noisy signal (inferred). XMOS default: 10. Seeed
+default: 90. The unit is not stated (linear factor, inferred).
+"""
+source = "https://www.xmos.com/documentation/XM-014888-PC/html/modules/fwk_xvf/doc/user_guide/04_tuning_the_application.html#microphone-gain"
+
+["xvf3800/usb/audio_mgr.ref_gain"]
+text = """
+A gain on the far-end (reference) signal before the AEC. It does not
+change the speaker volume. Tune it so the reference peaks as high as
+possible, near 0 dBFS, but never clips. Leave 1 to 2 dB of headroom.
+XMOS default: 1.5. Seeed default: 8.0. The unit is not stated (linear
+factor, inferred).
+"""
+source = "https://www.xmos.com/documentation/XM-014888-PC/html/modules/fwk_xvf/doc/user_guide/04_tuning_the_application.html#reference-gain"
+
+["xvf3800/usb/audio_mgr.selected_azimuths"]
+text = """
+Read-only, in radians. Value 1: the direction of the current talker. It
+uses speech energy to choose between the two focused beams. It is NaN
+when neither beam has speech. Value 2: the direction of the auto-selected
+beam. Value 1 is the steadier choice for a talker display (inferred).
+Firmware 2.0.0 and earlier returned different values.
+"""
+source = "https://www.xmos.com/documentation/XM-014888-PC/html/modules/fwk_xvf/doc/user_guide/03_using_the_host_application.html"
+
+["xvf3800/usb/audio_mgr.selected_channels"]
+text = """
+Selects which processed channels the default post-processing sends to the
+"user chosen channels" output (mux category 8). Two values, each 0 to 3.
+XMOS default: 3, 3 (the auto-select beam). The effect on the real output
+depends on the mux settings (audio_mgr.op_l, audio_mgr.op_r). Custom
+firmware can override it.
+"""
+source = "https://www.xmos.com/documentation/XM-014888-PC/html/modules/fwk_xvf/doc/user_guide/AA_control_command_appendix.html"
+
+["xvf3800/usb/audio_mgr.op_l"]
+text = """
+The source of the left output channel, as a pair: category, source.
+Default 8, 0: the processed, auto-selected beam (echo removed,
+beamformed, noise suppressed). Other examples: 1, n raw microphone n; 6, 3
+the auto-select beam; 7, n AEC residual or ASR beam n; 4, 0 the playback
+reference. Change it to record raw microphones or to debug the pipeline.
+"""
+source = "https://github.com/respeaker/reSpeaker_XVF3800_USB_4MIC_ARRAY/blob/master/host_control/README.md"
+
+["xvf3800/usb/audio_mgr.op_r"]
+text = """
+The source of the right output channel, as a pair: category, source. The
+categories are the same as for audio_mgr.op_l. XMOS default: 0, 0
+(silence). Seeed says that the board right channel carries the ASR output
+of the auto-selected beam by default. Use it to get a second signal, for
+example raw microphone audio, next to the processed left channel.
+"""
+source = "https://github.com/respeaker/reSpeaker_XVF3800_USB_4MIC_ARRAY/blob/master/host_control/README.md"
+
+["xvf3800/usb/audio_mgr.op_all"]
+text = """
+Sets category and source of all six output slots at once: three for the
+left channel and three for the right. The extra slots are for packed
+output. Each pair is category, source, as in audio_mgr.op_l. No default
+is stated. Most users set audio_mgr.op_l and audio_mgr.op_r instead
+(inferred).
+"""
+source = "https://github.com/respeaker/reSpeaker_XVF3800_USB_4MIC_ARRAY/blob/master/python_control/xvf_host.py"
+
+["xvf3800/usb/audio_mgr.sys_delay"]
+text = """
+A delay, in samples, that lines up the playback reference with the echo
+in the microphones. A positive value delays the reference. A negative
+value delays the microphones and adds latency. The echo must reach the
+AEC after the reference, ideally within about 40 samples. Change it when
+echo cancellation is poor, for example with a speaker that has internal
+delay. XMOS default: -32. Seeed default: 12. Range: -64 to 256.
+"""
+source = "https://www.xmos.com/documentation/XM-014888-PC/html/modules/fwk_xvf/doc/user_guide/04_tuning_the_application.html#system-delay"
+
+["xvf3800/usb/audio_mgr.op_ch3"]
+text = """
+The source of USB capture channel 3, as category, source (same categories
+as audio_mgr.op_l). The six-channel firmware sends raw microphone signals
+on channels 3 to 6 by default. Raw signals are quieter than the processed
+outputs. Needs firmware 2.1.0 or later and a six-channel image (inferred).
+"""
+source = "https://github.com/respeaker/reSpeaker_XVF3800_USB_4MIC_ARRAY/blob/master/xmos_firmwares/usb/readme.md"
+
+["xvf3800/usb/audio_mgr.op_ch4"]
+text = """
+The source of USB capture channel 4, as category, source. See
+audio_mgr.op_ch3. Needs firmware 2.1.0 or later.
+"""
+source = "https://github.com/respeaker/reSpeaker_XVF3800_USB_4MIC_ARRAY/blob/master/xmos_firmwares/usb/readme.md"
+
+["xvf3800/usb/audio_mgr.op_ch5"]
+text = """
+The source of USB capture channel 5, as category, source. See
+audio_mgr.op_ch3. Needs firmware 2.1.0 or later.
+"""
+source = "https://github.com/respeaker/reSpeaker_XVF3800_USB_4MIC_ARRAY/blob/master/xmos_firmwares/usb/readme.md"
+
+["xvf3800/usb/audio_mgr.op_ch6"]
+text = """
+The source of USB capture channel 6, as category, source. See
+audio_mgr.op_ch3. Needs firmware 2.1.0 or later.
+"""
+source = "https://github.com/respeaker/reSpeaker_XVF3800_USB_4MIC_ARRAY/blob/master/xmos_firmwares/usb/readme.md"
+
+# ------------------------------------------------------- gpo, led, doa (20)
+
+["xvf3800/usb/gpo.read_values"]
+text = """
+Read-only. The logic level of the five output pins. X0D30 high mutes the
+microphones and lights the red mute LED. X0D31 low turns on the audio
+amplifier. X0D33 high powers the LED ring. X0D11 and X0D39 are not
+connected. Read it to see the mute and amplifier state.
+"""
+source = "https://github.com/respeaker/reSpeaker_XVF3800_USB_4MIC_ARRAY/blob/master/host_control/README.md"
+
+["xvf3800/usb/led.effect"]
+text = """
+The LED ring effect: 0 off, 1 breath, 2 rainbow, 3 single color, 4 DoA
+(shows the direction of the talker), 5 ring (each LED its own color,
+firmware 2.0.7 or later). At boot the board shows rainbow, then changes
+to DoA after 2 seconds.
+"""
+source = "https://github.com/respeaker/reSpeaker_XVF3800_USB_4MIC_ARRAY/blob/master/host_control/README.md"
+
+["xvf3800/usb/led.brightness"]
+text = """
+The brightness of the breath and rainbow effects. A higher value is
+brighter (inferred). The sources do not state the range or the default.
+"""
+source = "https://github.com/respeaker/reSpeaker_XVF3800_USB_4MIC_ARRAY/blob/master/host_control/README.md"
+
+["xvf3800/usb/led.gammify"]
+text = """
+Gamma correction of the LED colors: 0 off, 1 on. Gamma correction makes
+brightness steps look more even to the eye (inferred).
+"""
+source = "https://github.com/respeaker/reSpeaker_XVF3800_USB_4MIC_ARRAY/blob/master/host_control/README.md"
+
+["xvf3800/usb/led.speed"]
+text = """
+The speed of the breath and rainbow effects. The sources do not state the
+range, the default, or if a higher value is faster.
+"""
+source = "https://github.com/respeaker/reSpeaker_XVF3800_USB_4MIC_ARRAY/blob/master/host_control/README.md"
+
+["xvf3800/usb/led.color"]
+text = """
+The LED color of the breath and single color effects, as 0xRRGGBB (for
+example 0xff8800 for orange).
+"""
+source = "https://github.com/respeaker/reSpeaker_XVF3800_USB_4MIC_ARRAY/blob/master/host_control/README.md"
+
+["xvf3800/usb/led.doa_color"]
+text = """
+The colors of the DoA effect, as 0xRRGGBB: first the base color of the
+ring, then the color of the LED that points at the talker.
+"""
+source = "https://github.com/respeaker/reSpeaker_XVF3800_USB_4MIC_ARRAY/blob/master/host_control/README.md"
+
+["xvf3800/usb/led.ring_color"]
+text = """
+The color of each of the 12 LEDs in ring mode (led.effect 5), as 0xRRGGBB.
+Needs firmware 2.0.7 or later.
+"""
+source = "https://github.com/respeaker/reSpeaker_XVF3800_USB_4MIC_ARRAY/blob/master/xmos_firmwares/usb/readme.md"
+
+["xvf3800/usb/doa.value"]
+text = """
+Read-only. The direction of arrival of sound, from 0 to 359 degrees, and
+a speech flag (1 speech detected, 0 not). It is a simple form of the beam
+directions. Since firmware 2.0.10 it stays current when the LED ring does
+not show the DoA effect. Needs firmware 2.0.6 or later.
+"""
+source = "https://github.com/respeaker/reSpeaker_XVF3800_USB_4MIC_ARRAY/blob/master/xmos_firmwares/usb/readme.md"
+
+# ---------------------------------------------------------------- gpi (36)
+
+["xvf3800/usb/gpi.read_values"]
+text = """
+Read-only. The logic level of the three input pins. X1D09 is the mute
+button: high when the button is released. X1D13 and X1D34 are not
+connected.
+"""
+source = "https://github.com/respeaker/reSpeaker_XVF3800_USB_4MIC_ARRAY/blob/master/host_control/README.md"
+
+["xvf3800/usb/gpi.mute_function_enable"]
+text = """
+The built-in action of the mute button: 1 on, 0 off. With 0, a press does
+not mute the microphones, but the device still detects the press. Use 0
+when the host gives the button its own function. Needs firmware 2.1.1 or
+later.
+"""
+source = "https://github.com/respeaker/reSpeaker_XVF3800_USB_4MIC_ARRAY/blob/master/xmos_firmwares/usb/readme.md"
+
+# ----------------------------------------------------------------- pp (17)
+
+["xvf3800/usb/pp.agconoff"]
+text = """
+Automatic gain control (AGC) adaptation. The AGC keeps the output level
+constant, so near and far talkers sound equally loud. With 1, the AGC
+changes its gain (pp.agcgain) to reach the target level. With 0, the gain
+stays at its current value. 0 does not remove the gain. XMOS default: 1.
+Use 0 for a fixed, predictable level. ATTNS has no effect with 0.
+"""
+source = "https://www.xmos.com/documentation/XM-014888-PC/html/modules/fwk_xvf/doc/user_guide/04_tuning_the_application.html#agc-configuration"
+
+["xvf3800/usb/pp.agcmaxgain"]
+text = """
+The highest gain that the AGC can apply (linear factor, 1 to 1000). A
+higher value makes quiet or distant speech louder, but also makes
+background noise louder in pauses. Raise it if quiet speech is too quiet.
+Lower it if background noise is too loud. XMOS default: 125. Seeed
+default: 64.
+"""
+source = "https://www.xmos.com/documentation/XM-014888-PC/html/modules/fwk_xvf/doc/user_guide/04_tuning_the_application.html#agc-configuration"
+
+["xvf3800/usb/pp.agcdesiredlevel"]
+text = """
+The target output power of the AGC (1e-8 to 1.0, power, not dB). A higher
+value gives a louder output. After a change, the AGC gain adapts to the
+new target. Too high a target can push the output into the limiter
+(inferred). XMOS default: 0.0045.
+"""
+source = "https://www.xmos.com/documentation/XM-014888-PC/html/modules/fwk_xvf/doc/user_guide/04_tuning_the_application.html#agc-configuration"
+
+["xvf3800/usb/pp.agcgain"]
+text = """
+The AGC gain that applies now (linear factor, 1 to 1000). It always
+applies, also when pp.agconoff is 0. When AGC adapts, the value changes
+by itself, and a write sets a start value. With adaptation off, it is a
+fixed output gain. XMOS default: 32. Seeed default: 2.
+"""
+source = "https://www.xmos.com/documentation/XM-014888-PC/html/modules/fwk_xvf/doc/user_guide/04_tuning_the_application.html#agc-configuration"
+
+["xvf3800/usb/pp.agctime"]
+text = """
+The time constant (0.5 to 4 s) of normal AGC gain changes, up and down. A
+shorter time follows level changes faster, but can make the level go up
+and down during speech. A longer time is steadier but slower. Default:
+0.9 s. XMOS advises to keep the default.
+"""
+source = "https://www.xmos.com/documentation/XM-014888-PC/html/modules/fwk_xvf/doc/user_guide/04_tuning_the_application.html#agc-configuration"
+
+["xvf3800/usb/pp.agcfasttime"]
+text = """
+The time constant (0.05 to 4 s) to decrease the AGC gain on loud peaks.
+A shorter time reduces the gain faster on a sudden loud sound. Defaults
+conflict: 0.1 s (appendix) and 0.6 s (tuning guide). XMOS advises to keep
+the default.
+"""
+source = "https://www.xmos.com/documentation/XM-014888-PC/html/modules/fwk_xvf/doc/user_guide/04_tuning_the_application.html#agc-configuration"
+
+["xvf3800/usb/pp.agcalphafastgain"]
+text = """
+The AGC gain above which the AGC uses the fast speech-power memory
+(pp.agcalphafast) (linear factor, 0 to 1000). Default 0: the AGC always
+uses the slow memory (pp.agcalphaslow). XMOS advises to keep the default.
+"""
+source = "https://www.xmos.com/documentation/XM-014888-PC/html/modules/fwk_xvf/doc/user_guide/04_tuning_the_application.html#agc-configuration"
+
+["xvf3800/usb/pp.agcalphaslow"]
+text = """
+The slow memory factor of the speech power that the AGC measures (0 to
+1). A value near 1 averages over a longer time, so the AGC reacts slowly
+and smoothly (inferred). Default: 0.984. XMOS advises not to change the
+AGC time settings, because faster settings can make the level fluctuate.
+"""
+source = "https://www.xmos.com/documentation/XM-014888-PC/html/modules/fwk_xvf/doc/user_guide/AA_control_command_appendix.html"
+
+["xvf3800/usb/pp.agcalphafast"]
+text = """
+The fast memory factor of the speech power (0 to 1). The AGC uses it only
+when its gain is above pp.agcalphafastgain. A lower value reacts faster
+(inferred). Default: 0.36.
+"""
+source = "https://www.xmos.com/documentation/XM-014888-PC/html/modules/fwk_xvf/doc/user_guide/AA_control_command_appendix.html"
+
+["xvf3800/usb/pp.limitonoff"]
+text = """
+The output limiter: 1 on, 0 off. The limiter compresses the processed
+output when its power would go above pp.limitplimit. This prevents very
+loud sound from clipping the output. XMOS default: 1. Keep it on unless a
+later stage limits the level (inferred).
+"""
+source = "https://www.xmos.com/documentation/XM-014888-PC/html/modules/fwk_xvf/doc/user_guide/04_tuning_the_application.html#initial-parameter-setting"
+
+["xvf3800/usb/pp.limitplimit"]
+text = """
+The maximum output power of the limiter (1e-8 to 1.0, power). When the
+output is predicted to go above it, the limiter compresses the output. A
+lower value limits earlier and gives a quieter, more compressed peak
+level (inferred). XMOS default: 0.47.
+"""
+source = "https://www.xmos.com/documentation/XM-014888-PC/html/modules/fwk_xvf/doc/user_guide/04_tuning_the_application.html#initial-parameter-setting"
+
+["xvf3800/usb/pp.min_ns"]
+text = """
+The gain floor of stationary noise suppression (0 to 1). Stationary noise
+is constant noise such as a fan or air conditioning. The value is the
+lowest gain on that noise: 0.15 removes about 15 dB, 1.0 removes none. A
+lower value removes more noise, but can make speech sound unnatural
+(inferred). Default: 0.15.
+"""
+source = "https://www.xmos.com/documentation/XM-014888-PC/html/modules/fwk_xvf/doc/user_guide/04_tuning_the_application.html#noise-suppression"
+
+["xvf3800/usb/pp.min_nn"]
+text = """
+The gain floor of non-stationary noise suppression (0 to 1). Non-stationary
+noise changes over time, for example clatter or voices in the background
+(inferred). XMOS recommends 0.51 or more (at most about 6 dB of
+suppression). A value of 0.5 or less turns on extra suppression. Lower
+values remove more noise but can harm speech, mostly in echoic rooms.
+Default: 0.51.
+"""
+source = "https://www.xmos.com/documentation/XM-014888-PC/html/modules/fwk_xvf/doc/user_guide/04_tuning_the_application.html#noise-suppression"
+
+["xvf3800/usb/pp.echoonoff"]
+text = """
+Echo suppression: 1 on, 0 off. It removes the echo that remains after the
+AEC (residual echo). Without it, a remote party or a speech recognizer
+can hear the device's own playback (inferred). XMOS default: 1. Turn it
+off only for tests.
+"""
+source = "https://www.xmos.com/documentation/XM-014888-PC/html/modules/fwk_xvf/doc/user_guide/04_tuning_the_application.html#echo-suppression"
+
+["xvf3800/usb/pp.gamma_e"]
+text = """
+Over-subtraction of the direct and early echo (0 to 2). 1.0 means that
+this echo is suppressed correctly. A higher value removes more echo but
+always harms speech quality. Values below 1.0 are not advised. Typical
+range: 1.0 to 1.4. If it must be above about 1.4, tune pp.gamma_enl
+instead. Default: 1.0.
+"""
+source = "https://www.xmos.com/documentation/XM-014888-PC/html/modules/fwk_xvf/doc/user_guide/04_tuning_the_application.html#pp-gamma-e-and-pp-gamma-enl"
+
+["xvf3800/usb/pp.gamma_etail"]
+text = """
+Over-subtraction of the echo tail (0 to 2), the late echo from room
+reverberation. A higher value removes more of the tail but harms speech
+quality. Tune it in a moderately echoic room (RT60 0.3 to 0.9 s). Typical
+range: 1.0 to 1.4. Default: 1.0.
+"""
+source = "https://www.xmos.com/documentation/XM-014888-PC/html/modules/fwk_xvf/doc/user_guide/04_tuning_the_application.html#pp-gamma-etail"
+
+["xvf3800/usb/pp.gamma_enl"]
+text = """
+Over-subtraction of non-linear echo (0 to 5). Non-linear echo comes from
+distortion, for example in a small or loud speaker. A higher value
+removes more of it but harms speech quality. Use it when pp.gamma_e must
+go above about 1.4. Default: 1.1.
+"""
+source = "https://www.xmos.com/documentation/XM-014888-PC/html/modules/fwk_xvf/doc/user_guide/04_tuning_the_application.html#pp-gamma-e-and-pp-gamma-enl"
+
+["xvf3800/usb/pp.nlattenonoff"]
+text = """
+Non-linear echo suppression: 1 on, 0 off. It removes echo that comes from
+speaker distortion, with a model of that distortion. XMOS default: 1.
+XMOS turns it off only while tuning pp.mgscale.
+"""
+source = "https://www.xmos.com/documentation/XM-014888-PC/html/modules/fwk_xvf/doc/user_guide/04_tuning_the_application.html#echo-suppression"
+
+["xvf3800/usb/pp.nlaec_mode"]
+text = """
+The training mode of the non-linear echo model: 0 normal, 1 train, 2
+train2. Default: 0. Training needs a silent, almost echo-free room (RT60
+below 0.3 s) and should be repeated after any gain or filter change. The
+sources do not explain the difference between modes 1 and 2. Keep 0 in
+normal use.
+"""
+source = "https://www.xmos.com/documentation/XM-014888-PC/html/modules/fwk_xvf/doc/user_guide/04_tuning_the_application.html#tuning-the-non-linear-model"
+
+["xvf3800/usb/pp.mgscale"]
+text = """
+Extra suppression while the far end plays: max, min, current. A higher
+max removes more residual echo (typical 100 to 1000). A lower min reduces
+distortion of near-end speech, but removes less stationary noise that is
+in the playback signal. Low noise on the reference can look like far-end
+speech and cause over-suppression. XMOS default: 1000, 1.
+"""
+source = "https://www.xmos.com/documentation/XM-014888-PC/html/modules/fwk_xvf/doc/user_guide/04_tuning_the_application.html#mgscale"
+
+["xvf3800/usb/pp.fmin_speindex"]
+text = """
+A frequency (0 to 7999 Hz) for double talk, when both sides speak at the
+same time. Below this frequency, suppression is stronger than above it.
+pp.dtsensitive sets the amount. It depends on the device, not on taste:
+tune it from the measured echo spectrum. XMOS default: 593.75 Hz. Seeed
+default: 1300 Hz.
+"""
+source = "https://www.xmos.com/documentation/XM-014888-PC/html/modules/fwk_xvf/doc/user_guide/04_tuning_the_application.html#fmin-speindex"
+
+["xvf3800/usb/pp.dtsensitive"]
+text = """
+The balance between echo suppression and double talk (both sides speak at
+once). A lower value removes more echo, but can cut near-end speech. A
+higher value keeps near-end speech, but can let echo through. Values 0
+to 5, or 10 to 15. Two digits add an extra near-end speech detector. Good
+double talk needs a speaker with little distortion. Default: 0.
+"""
+source = "https://www.xmos.com/documentation/XM-014888-PC/html/modules/fwk_xvf/doc/user_guide/04_tuning_the_application.html#pp-dtsensitive"
+
+["xvf3800/usb/pp.attns_mode"]
+text = """
+ATTNS: extra noise reduction in speech pauses when the AGC gain is high.
+A high AGC gain makes background noise loud in pauses. ATTNS reduces it.
+0 off, 1 on. It also biases the beam selection against noisy beams. It
+has no effect when pp.agconoff is 0. Default: 0.
+"""
+source = "https://www.xmos.com/documentation/XM-014888-PC/html/modules/fwk_xvf/doc/user_guide/04_tuning_the_application.html#attns"
+
+["xvf3800/usb/pp.attns_nominal"]
+text = """
+The amount of ATTNS noise reduction in pauses at a normal speech level.
+Default: 1.0. Increase it until the noise in pauses is low enough. The
+sources conflict: the range is 0 to 1, but the tuning guide says values
+above 1 give more suppression. Tune it together with pp.attns_slope. It
+applies only when pp.attns_mode is on.
+"""
+source = "https://www.xmos.com/documentation/XM-014888-PC/html/modules/fwk_xvf/doc/user_guide/04_tuning_the_application.html#attns-nominal"
+
+["xvf3800/usb/pp.attns_slope"]
+text = """
+How much more ATTNS suppression applies in pauses when the AGC gain goes
+up for quiet speech (0 to 5). The extra attenuation is
+(nominal gain / current gain) to the power of this value. With 1.0, the
+noise in the output stays about the same at any AGC gain. A higher value
+suppresses more. Default: 1.0.
+"""
+source = "https://github.com/respeaker/reSpeaker_XVF3800_USB_4MIC_ARRAY/blob/master/python_control/xvf_host.py"

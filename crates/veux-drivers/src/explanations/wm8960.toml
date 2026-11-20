@@ -1,0 +1,385 @@
+# Explanations of the WM8960 mixer controls of the ReSpeaker 2-Mics Pi HAT v1.x.
+# See docs/development/explanations.md.
+
+# Plain-language explanations of the WM8960 ALSA mixer controls on the
+# ReSpeaker 2-Mics Pi HAT v1.x, keyed by veux parameter ID.
+#
+# Sources used:
+# - WM8960 datasheet, Rev 4.2 (Wolfson/Cirrus). Read from the mirror
+#   https://www.waveshare.com/w/upload/1/18/WM8960_v4.2.pdf because the
+#   Cirrus PDF link returned "Access Denied". Product page:
+#   https://www.cirrus.com/products/wm8960/
+# - Linux driver: https://github.com/torvalds/linux/blob/master/sound/soc/codecs/wm8960.c
+# - Seeed v1 schematic: https://files.seeedstudio.com/wiki/MIC_HATv1.0_for_raspberrypi/src/ReSpeaker%202-Mics%20Pi%20HAT_SCH.pdf
+# - Seeed wiki: https://wiki.seeedstudio.com/ReSpeaker_2_Mics_Pi_HAT/
+#
+# Capture signal path (datasheet "Input Signal Path"; kernel names in quotes):
+#   mic -> LINPUT1 -> input PGA ("Capture Volume") -> boost
+#   ("... LINPUT1 Volume") -> ADC -> digital volume ("ADC PCM Capture Volume")
+#
+# Note: several kernel control names do not match the datasheet block names.
+# Each entry gives the datasheet register bit so the mapping can be checked.
+
+# ---------------------------------------------------------------- capture path
+
+["respeaker-2mic-v1/alsa/mixer.capture_volume"]
+text = """
+Input PGA gain. This is the first gain stage after the microphone. Range 0 to 63 is -17.25 dB to +30 dB in 0.75 dB steps. 23 is 0 dB. 39 is +12 dB. Total analogue gain is this value plus the boost ("LINPUT1/RINPUT1 Volume"), up to +59 dB. More analogue gain lifts quiet speech above the noise of later stages. Too much gain clips loud sounds in the ADC. When the ALC is on, the ALC sets this gain and ignores this value.
+"""
+source = "https://www.waveshare.com/w/upload/1/18/WM8960_v4.2.pdf"
+
+["respeaker-2mic-v1/alsa/mixer.capture_volume_zc_switch"]
+text = """
+Zero-cross for the input PGA. On: a new "Capture Volume" value takes effect only when the signal crosses zero. This prevents "zipper noise" (clicks) during gain changes. Off: the gain changes immediately. If the signal has no zero crossing for a long time, the chip can apply the change after a timeout (TOEN bit). That bit is not in this control list. SYSCLK must run for the timeout. Not important for a voice satellite where gain is set once (inferred).
+"""
+source = "https://www.waveshare.com/w/upload/1/18/WM8960_v4.2.pdf"
+
+["respeaker-2mic-v1/alsa/mixer.capture_switch"]
+text = """
+Analogue mute of the input PGAs (datasheet bits LINMUTE and RINMUTE, which the kernel inverts). On (true): the PGA is live and the microphone signal passes. Off (false): the PGA output to the boost stage is muted and capture is silent. Keep it on for a voice satellite. When the ALC is on, the chip ignores this mute.
+"""
+source = "https://github.com/torvalds/linux/blob/master/sound/soc/codecs/wm8960.c"
+
+["respeaker-2mic-v1/alsa/mixer.left_input_boost_mixer_linput1_volume"]
+text = """
+Microphone boost for the left channel: fixed analogue gain from the left input PGA to the ADC (datasheet LMICBOOST). 0 = +0 dB, 1 = +13 dB, 2 = +20 dB, 3 = +29 dB. On this board the left microphone (MIC1) feeds LINPUT1. Gain staging: choose a boost step first, then fine-tune with "Capture Volume". Analogue gain before the ADC keeps the ADC's own noise small relative to speech (inferred). Too much total gain clips the ADC. ADC full scale is 1.0 Vrms at a 3.3 V supply.
+"""
+source = "https://www.waveshare.com/w/upload/1/18/WM8960_v4.2.pdf"
+
+["respeaker-2mic-v1/alsa/mixer.right_input_boost_mixer_rinput1_volume"]
+text = """
+Microphone boost for the right channel: fixed analogue gain from the right input PGA to the ADC (datasheet RMICBOOST). 0 = +0 dB, 1 = +13 dB, 2 = +20 dB, 3 = +29 dB. On this board the right microphone (MIC2) feeds RINPUT1. Set it to the same value as the left boost, so both microphones have equal level (inferred). Too much total gain clips the ADC.
+"""
+source = "https://www.waveshare.com/w/upload/1/18/WM8960_v4.2.pdf"
+
+["respeaker-2mic-v1/alsa/mixer.left_input_boost_mixer_linput2_volume"]
+text = """
+Gain from the LINPUT2 line input into the left boost mixer (datasheet LIN2BOOST). 0 = mute, 1 = -12 dB, then 3 dB steps up to 7 = +6 dB. On the v1 schematic, LINPUT2 connects to a net named AIN1P. No microphone uses it, and its other end was not traced. Keep it at 0 (mute) so no extra noise enters the capture path (inferred).
+"""
+source = "https://www.waveshare.com/w/upload/1/18/WM8960_v4.2.pdf"
+
+["respeaker-2mic-v1/alsa/mixer.right_input_boost_mixer_rinput2_volume"]
+text = """
+Gain from the RINPUT2 line input into the right boost mixer (datasheet RIN2BOOST). 0 = mute, 1 = -12 dB, then 3 dB steps up to 7 = +6 dB. On the v1 schematic, RINPUT2 connects to a net named AIN2P. No microphone uses it, and its other end was not traced. Keep it at 0 (mute) (inferred).
+"""
+source = "https://www.waveshare.com/w/upload/1/18/WM8960_v4.2.pdf"
+
+["respeaker-2mic-v1/alsa/mixer.left_input_boost_mixer_linput3_volume"]
+text = """
+Gain from the LINPUT3 line input into the left boost mixer (datasheet LIN3BOOST). 0 = mute, 1 = -12 dB, then 3 dB steps up to 7 = +6 dB. LINPUT3 has no visible connection on the v1 schematic (inferred from the drawing). Keep it at 0 (mute).
+"""
+source = "https://www.waveshare.com/w/upload/1/18/WM8960_v4.2.pdf"
+
+["respeaker-2mic-v1/alsa/mixer.right_input_boost_mixer_rinput3_volume"]
+text = """
+Gain from the RINPUT3 line input into the right boost mixer (datasheet RIN3BOOST). 0 = mute, 1 = -12 dB, then 3 dB steps up to 7 = +6 dB. RINPUT3 has no visible connection on the v1 schematic (inferred from the drawing). Keep it at 0 (mute).
+"""
+source = "https://www.waveshare.com/w/upload/1/18/WM8960_v4.2.pdf"
+
+["respeaker-2mic-v1/alsa/mixer.left_boost_mixer_linput1_switch"]
+text = """
+Connects LINPUT1, the left microphone on this board, to the left input PGA (datasheet bit LMN1 in R32; chip default on). The kernel name says "Boost Mixer", but the bit feeds the PGA. Off: the left microphone has no path to the ADC (inferred). Keep it on.
+"""
+source = "https://github.com/torvalds/linux/blob/master/sound/soc/codecs/wm8960.c"
+
+["respeaker-2mic-v1/alsa/mixer.right_boost_mixer_rinput1_switch"]
+text = """
+Connects RINPUT1, the right microphone on this board, to the right input PGA (datasheet bit RMN1 in R33; chip default on). The kernel name says "Boost Mixer", but the bit feeds the PGA. Off: the right microphone has no path to the ADC (inferred). Keep it on.
+"""
+source = "https://github.com/torvalds/linux/blob/master/sound/soc/codecs/wm8960.c"
+
+["respeaker-2mic-v1/alsa/mixer.left_boost_mixer_linput2_switch"]
+text = """
+Connects LINPUT2 to the non-inverting input of the left input PGA (datasheet bit LMP2). This is for a differential microphone. The microphones on this board are single-ended on LINPUT1. With this bit off, the chip ties the non-inverting input to VMID, which single-ended use requires. Keep it off.
+"""
+source = "https://github.com/torvalds/linux/blob/master/sound/soc/codecs/wm8960.c"
+
+["respeaker-2mic-v1/alsa/mixer.right_boost_mixer_rinput2_switch"]
+text = """
+Connects RINPUT2 to the non-inverting input of the right input PGA (datasheet bit RMP2). This is for a differential microphone. The microphones on this board are single-ended on RINPUT1. Keep it off, so the non-inverting input stays on VMID.
+"""
+source = "https://github.com/torvalds/linux/blob/master/sound/soc/codecs/wm8960.c"
+
+["respeaker-2mic-v1/alsa/mixer.left_boost_mixer_linput3_switch"]
+text = """
+Connects LINPUT3 to the non-inverting input of the left input PGA (datasheet bit LMP3). This is for a differential microphone. This board does not use it. Keep it off.
+"""
+source = "https://github.com/torvalds/linux/blob/master/sound/soc/codecs/wm8960.c"
+
+["respeaker-2mic-v1/alsa/mixer.right_boost_mixer_rinput3_switch"]
+text = """
+Connects RINPUT3 to the non-inverting input of the right input PGA (datasheet bit RMP3). This is for a differential microphone. This board does not use it. Keep it off.
+"""
+source = "https://github.com/torvalds/linux/blob/master/sound/soc/codecs/wm8960.c"
+
+["respeaker-2mic-v1/alsa/mixer.left_input_mixer_boost_switch"]
+text = """
+Connects the left input PGA output to the left boost mixer, which feeds the ADC (datasheet bit LMIC2B in R32; chip default off). The kernel calls the PGA the "Input Mixer". Off: the left microphone signal does not reach the ADC, so the left capture channel is silent (inferred). Turn it on for a voice satellite.
+"""
+source = "https://github.com/torvalds/linux/blob/master/sound/soc/codecs/wm8960.c"
+
+["respeaker-2mic-v1/alsa/mixer.right_input_mixer_boost_switch"]
+text = """
+Connects the right input PGA output to the right boost mixer, which feeds the ADC (datasheet bit RMIC2B in R33; chip default off). Off: the right microphone signal does not reach the ADC, so the right capture channel is silent (inferred). Turn it on for a voice satellite.
+"""
+source = "https://github.com/torvalds/linux/blob/master/sound/soc/codecs/wm8960.c"
+
+["respeaker-2mic-v1/alsa/mixer.adc_pcm_capture_volume"]
+text = """
+Digital gain after the ADC. 0 = mute, 1 = -97 dB, 0.5 dB steps, 195 = 0 dB, 255 = +30 dB. Digital gain raises signal and noise by the same amount. It cannot undo clipping that already happened in the ADC (inferred). Set level with the analogue stages first ("LINPUT1/RINPUT1 Volume", then "Capture Volume"). Keep this at 195 (0 dB) and use it only to trim (inferred).
+"""
+source = "https://www.waveshare.com/w/upload/1/18/WM8960_v4.2.pdf"
+
+["respeaker-2mic-v1/alsa/mixer.adc_high_pass_filter_switch"]
+text = """
+Caution: this switch DISABLES the filter. The kernel maps it to datasheet bit ADCHPD ("ADC High Pass Filter Disable"). false = filter on (chip default). true = filter off. The digital high-pass filter removes DC offset from the ADC output. Keep it false for voice (inferred). The datasheet text does not state the cut-off frequency.
+"""
+source = "https://github.com/torvalds/linux/blob/master/sound/soc/codecs/wm8960.c"
+
+["respeaker-2mic-v1/alsa/mixer.adc_polarity"]
+text = """
+Inverts the phase of the left ADC, the right ADC, or both. "No Inversion" is the default. Two-microphone processing (beamforming, direction of arrival) compares the phase of the two channels. Inverting one channel breaks that comparison (inferred). Keep "No Inversion".
+"""
+source = "https://www.waveshare.com/w/upload/1/18/WM8960_v4.2.pdf"
+
+["respeaker-2mic-v1/alsa/mixer.adc_data_output_select"]
+text = """
+Chooses which ADC feeds each channel of the capture stream (datasheet DATSEL). Options: normal (L=L, R=R), both channels from the left ADC, both from the right ADC, or swapped. Keep the normal option to get both microphones (inferred). Use "Left Data = Left ADC; Right Data = Left ADC" only if you want one microphone on both channels.
+"""
+source = "https://www.waveshare.com/w/upload/1/18/WM8960_v4.2.pdf"
+
+# ----------------------------------------------------------------------- ALC
+
+["respeaker-2mic-v1/alsa/mixer.alc_function"]
+text = """
+Automatic Level Control (ALC). It adjusts the input PGA gain all the time to keep the recording level constant. A peak detector watches the ADC output. Off: you set "Capture Volume" by hand. Right / Left: ALC on one channel only. Stereo: one gain for both channels; set left and right "Capture Volume" equal first. While on, the chip ignores "Capture Volume" and "Capture Switch". In silence the ALC can raise gain until hiss is loud ("noise pumping"); the noise gate prevents this.
+"""
+source = "https://www.waveshare.com/w/upload/1/18/WM8960_v4.2.pdf"
+
+["respeaker-2mic-v1/alsa/mixer.alc_target"]
+text = """
+Target signal level at the ADC input when the ALC is on. The kernel inverts the register: a higher value gives a quieter target. Value v gives about -1.5 x v dBFS: 0 and 1 = -1.5 dBFS, 4 = -6 dBFS, 15 = -22.5 dBFS (inferred from the 1.5 dB step table). Conflict: the datasheet labels the reset value (register 1011, veux 4) as -12 dB, but its step table gives -6 dB. A lower target leaves more headroom for loud sounds (inferred).
+"""
+source = "https://github.com/torvalds/linux/blob/master/sound/soc/codecs/wm8960.c"
+
+["respeaker-2mic-v1/alsa/mixer.alc_max_gain"]
+text = """
+Highest PGA gain the ALC may use. 0 = -12 dB, then 6 dB steps, 7 = +30 dB (default). A lower limit stops the ALC from boosting background noise during silence (inferred). Has no effect when the ALC is off.
+"""
+source = "https://www.waveshare.com/w/upload/1/18/WM8960_v4.2.pdf"
+
+["respeaker-2mic-v1/alsa/mixer.alc_min_gain"]
+text = """
+Lowest PGA gain the ALC may use. 0 = -17.25 dB (default), then 6 dB steps: -11.25, -5.25, +0.75, +6.75, +12.75, +18.75, 7 = +24.75 dB. Has no effect when the ALC is off.
+"""
+source = "https://www.waveshare.com/w/upload/1/18/WM8960_v4.2.pdf"
+
+["respeaker-2mic-v1/alsa/mixer.alc_hold_time"]
+text = """
+Wait time before the ALC starts to raise gain after the level falls below the target. 0 = 0 ms (default), 1 = 2.67 ms, and the time doubles each step up to 15 = 43.691 s. Hold applies only to gain increase. The ALC reduces gain with no delay. A longer hold keeps gain steady in short pauses between words (inferred).
+"""
+source = "https://www.waveshare.com/w/upload/1/18/WM8960_v4.2.pdf"
+
+["respeaker-2mic-v1/alsa/mixer.alc_decay"]
+text = """
+Decay: how fast the ALC raises gain (ramp up). The value is the time to ramp across 90% of the gain range. 0 = 24 ms, and the time doubles each step; 3 = 192 ms (default); 10 or higher = 24.58 s. Slow decay keeps noise from rising quickly in silence (inferred). The driver sets the ALC sample rate from the stream rate, so these times stay correct.
+"""
+source = "https://www.waveshare.com/w/upload/1/18/WM8960_v4.2.pdf"
+
+["respeaker-2mic-v1/alsa/mixer.alc_attack"]
+text = """
+Attack: how fast the ALC lowers gain (ramp down) when the level is above target. The value is the time to ramp across 90% of the gain range. 0 = 6 ms, and the time doubles each step; 2 = 24 ms (default); 10 or higher = 6.14 s. A built-in peak limiter also ramps gain down at the fastest rate if the ADC input goes above 87.5% of full scale (-1.16 dB).
+"""
+source = "https://www.waveshare.com/w/upload/1/18/WM8960_v4.2.pdf"
+
+["respeaker-2mic-v1/alsa/mixer.alc_mode"]
+text = """
+Selects the mode of the ALC block: "ALC" (default) or "Limiter". The datasheet lists this bit (ALCMODE) but does not describe limiter-mode behaviour in detail. Unknown: exact limiter-mode operation. Separate from this setting, the chip always applies a peak limiter when the ALC is on.
+"""
+source = "https://www.waveshare.com/w/upload/1/18/WM8960_v4.2.pdf"
+
+["respeaker-2mic-v1/alsa/mixer.noise_gate_threshold"]
+text = """
+Noise gate threshold, relative to ADC full scale. 0 = -76.5 dBFS, 1.5 dB steps, 31 = -30 dBFS. When the level at the input pins is below this threshold, the gate holds the PGA gain constant. It does not mute the signal. This stops the ALC from boosting hiss in silence. The gate works only with the ALC on, on the same channels. The datasheet warns that values at the extremes may cause bad operation.
+"""
+source = "https://www.waveshare.com/w/upload/1/18/WM8960_v4.2.pdf"
+
+["respeaker-2mic-v1/alsa/mixer.noise_gate_switch"]
+text = """
+Turns the noise gate on or off (default off). The gate has no effect unless the ALC is on. See "Noise Gate Threshold".
+"""
+source = "https://www.waveshare.com/w/upload/1/18/WM8960_v4.2.pdf"
+
+# ------------------------------------------------------------- playback path
+
+["respeaker-2mic-v1/alsa/mixer.playback_volume"]
+text = """
+DAC digital volume, before the analogue outputs. 0 = mute, 1 = -127 dB, 0.5 dB steps, 255 = 0 dB (maximum; no gain above 0 dB). It sets the level for both headphone and speaker. A common approach is to keep this near 255 and set loudness with the headphone or speaker volume (inferred).
+"""
+source = "https://www.waveshare.com/w/upload/1/18/WM8960_v4.2.pdf"
+
+["respeaker-2mic-v1/alsa/mixer.headphone_playback_volume"]
+text = """
+Analogue volume of the HP_L/HP_R outputs. 127 = +6 dB, 1 dB steps, 121 = 0 dB, 48 = -73 dB. 0 to 47 mute the output. Gains above 0 dB can clip a large signal. On this board HP_L/HP_R appear to feed the 3.5 mm jack (inferred from the schematic net labels; the wiki says the jack is for a headphone or speaker).
+"""
+source = "https://www.waveshare.com/w/upload/1/18/WM8960_v4.2.pdf"
+
+["respeaker-2mic-v1/alsa/mixer.headphone_playback_zc_switch"]
+text = """
+Zero-cross for the headphone volume. On: volume changes wait for a zero crossing, which reduces clicks and zipper noise. Off: changes take effect immediately.
+"""
+source = "https://www.waveshare.com/w/upload/1/18/WM8960_v4.2.pdf"
+
+["respeaker-2mic-v1/alsa/mixer.speaker_playback_volume"]
+text = """
+Analogue volume of the class D speaker outputs. Same scale as headphone: 127 = +6 dB, 1 dB steps, 121 = 0 dB, 0 to 47 mute. On the v1 schematic the JST speaker connector is wired to SPK_RP/SPK_RN, the right channel. So the right value sets the speaker level; the left speaker pins look unconnected (inferred). The bridged (BTL) connection adds +6 dB. The output drives up to 1 W into 8 ohm.
+"""
+source = "https://files.seeedstudio.com/wiki/MIC_HATv1.0_for_raspberrypi/src/ReSpeaker%202-Mics%20Pi%20HAT_SCH.pdf"
+
+["respeaker-2mic-v1/alsa/mixer.speaker_playback_zc_switch"]
+text = """
+Zero-cross for the speaker volume. On: volume changes wait for a zero crossing, which reduces clicks. Off: changes take effect immediately.
+"""
+source = "https://www.waveshare.com/w/upload/1/18/WM8960_v4.2.pdf"
+
+["respeaker-2mic-v1/alsa/mixer.speaker_dc_volume"]
+text = """
+Class D speaker DC boost (datasheet DCGAIN). 0 = 1.00x (+0 dB), 1 = 1.27x (+2.1 dB), 2 = 1.40x (+2.9 dB), 3 = 1.52x (+3.6 dB), 4 = 1.67x (+4.5 dB), 5 = 1.8x (+5.1 dB). It uses a speaker supply above AVDD for more output. Normally set it equal to "Speaker AC Volume". AC must not be greater than DC. Do not change it while the speaker plays (pop noise). Unknown: the speaker supply voltage on this board.
+"""
+source = "https://www.waveshare.com/w/upload/1/18/WM8960_v4.2.pdf"
+
+["respeaker-2mic-v1/alsa/mixer.speaker_ac_volume"]
+text = """
+Class D speaker AC (signal) boost (datasheet ACGAIN). Same steps as DC: 0 = +0 dB up to 5 = 1.8x (+5.1 dB). Keep it less than or equal to "Speaker DC Volume", or the output clips at speaker ground. Peak output is AVDD x (DC + AC) / 2; the speaker supply must be high enough for it. Do not change it while the speaker plays (pop noise).
+"""
+source = "https://www.waveshare.com/w/upload/1/18/WM8960_v4.2.pdf"
+
+["respeaker-2mic-v1/alsa/mixer.pcm_playback_6db_switch"]
+text = """
+Attenuates the DAC output by 6 dB (datasheet DACDIV2; default off). The datasheet suggests it when 3D enhancement is on, to avoid limiting. Otherwise keep it off (inferred).
+"""
+source = "https://www.waveshare.com/w/upload/1/18/WM8960_v4.2.pdf"
+
+["respeaker-2mic-v1/alsa/mixer.dac_polarity"]
+text = """
+Inverts the phase of the left DAC, the right DAC, or both. "No Inversion" is the default. Keep "No Inversion" (inferred). Inversion is not audible on a single speaker, but it can affect echo cancellation that uses a playback reference (inferred).
+"""
+source = "https://www.waveshare.com/w/upload/1/18/WM8960_v4.2.pdf"
+
+["respeaker-2mic-v1/alsa/mixer.dac_deemphasis_switch"]
+text = """
+De-emphasis filter on playback. It is for audio recorded with pre-emphasis, for example some CDs. The kernel picks the nearest filter for 32, 44.1 or 48 kHz from the stream rate. Keep it off for voice and normal audio (inferred).
+"""
+source = "https://github.com/torvalds/linux/blob/master/sound/soc/codecs/wm8960.c"
+
+["respeaker-2mic-v1/alsa/mixer.dac_mono_mix"]
+text = """
+Stereo: normal. Mono: the chip mixes left and right digitally, attenuates the mix by 6 dB against clipping, and sends it to the outputs using one DAC. The speaker connector on this board uses the right channel only. Mono makes sure audio that is only in the left channel is still heard on the speaker (inferred from the schematic).
+"""
+source = "https://www.waveshare.com/w/upload/1/18/WM8960_v4.2.pdf"
+
+["respeaker-2mic-v1/alsa/mixer.dac_filter_characteristics"]
+text = """
+DAC digital filter shape (datasheet DACSLOPE). Normal: flat (+/-0.03 dB) up to 0.454 fs. Sloping: flat up to 0.25 fs, within 1 dB to 0.454 fs, with more stopband attenuation. Both have a group delay of 18/fs. Little effect on voice prompts (inferred).
+"""
+source = "https://www.waveshare.com/w/upload/1/18/WM8960_v4.2.pdf"
+
+# -------------------------------------------------------------- output mixers
+
+["respeaker-2mic-v1/alsa/mixer.left_output_mixer_pcm_playback_switch"]
+text = """
+Connects the left DAC to the left output mixer (datasheet LD2LO; chip default off). The output mixer feeds the headphone and speaker drivers. Off: left-channel playback is silent (inferred). Turn it on for playback.
+"""
+source = "https://www.waveshare.com/w/upload/1/18/WM8960_v4.2.pdf"
+
+["respeaker-2mic-v1/alsa/mixer.right_output_mixer_pcm_playback_switch"]
+text = """
+Connects the right DAC to the right output mixer (datasheet RD2RO; chip default off). The right output mixer feeds the right headphone channel and the speaker connector on this board. Off: the speaker is silent (inferred). Turn it on for playback.
+"""
+source = "https://www.waveshare.com/w/upload/1/18/WM8960_v4.2.pdf"
+
+["respeaker-2mic-v1/alsa/mixer.left_output_mixer_boost_bypass_switch"]
+text = """
+Analogue bypass: sends the left input boost mixer (the left microphone) straight to the left output mixer (datasheet LB2LO; default off). This plays the microphone on the headphone or speaker. On a satellite it can cause acoustic feedback (howling) and puts the microphone into the playback path (inferred). Keep it off.
+"""
+source = "https://www.waveshare.com/w/upload/1/18/WM8960_v4.2.pdf"
+
+["respeaker-2mic-v1/alsa/mixer.right_output_mixer_boost_bypass_switch"]
+text = """
+Analogue bypass: sends the right input boost mixer (the right microphone) straight to the right output mixer, and so to the speaker (datasheet RB2RO; default off). It can cause acoustic feedback (inferred). Keep it off.
+"""
+source = "https://www.waveshare.com/w/upload/1/18/WM8960_v4.2.pdf"
+
+["respeaker-2mic-v1/alsa/mixer.left_output_mixer_boost_bypass_volume"]
+text = """
+Level of the left microphone bypass into the left output mixer. The kernel inverts the register: 0 = -21 dB, 3 dB steps, 7 = 0 dB. It matters only when "Left Output Mixer Boost Bypass Switch" is on. The datasheet advises not to change bypass levels during playback (pop noise).
+"""
+source = "https://github.com/torvalds/linux/blob/master/sound/soc/codecs/wm8960.c"
+
+["respeaker-2mic-v1/alsa/mixer.right_output_mixer_boost_bypass_volume"]
+text = """
+Level of the right microphone bypass into the right output mixer. The kernel inverts the register: 0 = -21 dB, 3 dB steps, 7 = 0 dB. It matters only when "Right Output Mixer Boost Bypass Switch" is on.
+"""
+source = "https://github.com/torvalds/linux/blob/master/sound/soc/codecs/wm8960.c"
+
+["respeaker-2mic-v1/alsa/mixer.left_output_mixer_linput3_switch"]
+text = """
+Sends the LINPUT3 line input straight to the left output mixer (datasheet LI2LO; default off). LINPUT3 has no visible connection on the v1 schematic (inferred). Keep it off.
+"""
+source = "https://www.waveshare.com/w/upload/1/18/WM8960_v4.2.pdf"
+
+["respeaker-2mic-v1/alsa/mixer.right_output_mixer_rinput3_switch"]
+text = """
+Sends the RINPUT3 line input straight to the right output mixer (datasheet RI2RO; default off). RINPUT3 has no visible connection on the v1 schematic (inferred). Keep it off.
+"""
+source = "https://www.waveshare.com/w/upload/1/18/WM8960_v4.2.pdf"
+
+["respeaker-2mic-v1/alsa/mixer.left_output_mixer_linput3_volume"]
+text = """
+Level of LINPUT3 into the left output mixer. The kernel inverts the register: 0 = -21 dB, 3 dB steps, 7 = 0 dB. It matters only when "Left Output Mixer LINPUT3 Switch" is on. Not used on this board (inferred).
+"""
+source = "https://github.com/torvalds/linux/blob/master/sound/soc/codecs/wm8960.c"
+
+["respeaker-2mic-v1/alsa/mixer.right_output_mixer_rinput3_volume"]
+text = """
+Level of RINPUT3 into the right output mixer. The kernel inverts the register: 0 = -21 dB, 3 dB steps, 7 = 0 dB. It matters only when "Right Output Mixer RINPUT3 Switch" is on. Not used on this board (inferred).
+"""
+source = "https://github.com/torvalds/linux/blob/master/sound/soc/codecs/wm8960.c"
+
+["respeaker-2mic-v1/alsa/mixer.mono_output_mixer_left_switch"]
+text = """
+Sends the left output mixer to the mono mixer on the OUT3 pin (datasheet L2MO; default off). These controls exist only when the driver does not use OUT3 as a headphone ground ("capless" mode), so this board uses OUT3 as a mono output (inferred from the driver). Unknown: whether OUT3 is wired to a connector on this board. Keep it off.
+"""
+source = "https://github.com/torvalds/linux/blob/master/sound/soc/codecs/wm8960.c"
+
+["respeaker-2mic-v1/alsa/mixer.mono_output_mixer_right_switch"]
+text = """
+Sends the right output mixer to the mono mixer on the OUT3 pin (datasheet R2MO; default off). Unknown: whether OUT3 is wired to a connector on this board. Keep it off.
+"""
+source = "https://github.com/torvalds/linux/blob/master/sound/soc/codecs/wm8960.c"
+
+# ------------------------------------------------------------- 3D enhancement
+
+["respeaker-2mic-v1/alsa/mixer.3d_switch"]
+text = """
+Turns on digital 3D stereo enhancement. It widens the stereo image on playback only, not on capture. With one speaker on this board it has little use (inferred). Keep it off.
+"""
+source = "https://www.waveshare.com/w/upload/1/18/WM8960_v4.2.pdf"
+
+["respeaker-2mic-v1/alsa/mixer.3d_volume"]
+text = """
+Depth of the 3D effect. 0 = 0% (minimum), 6.67% steps, 15 = 100% (maximum). It matters only when "3D Switch" is on. With 3D on, the datasheet suggests "PCM Playback -6dB Switch" to avoid limiting.
+"""
+source = "https://www.waveshare.com/w/upload/1/18/WM8960_v4.2.pdf"
+
+["respeaker-2mic-v1/alsa/mixer.3d_filter_upper_cut_off"]
+text = """
+Upper cut-off of the 3D filter. High is recommended for sample rates of 32 kHz or more. Low is recommended below 32 kHz. It matters only when "3D Switch" is on.
+"""
+source = "https://www.waveshare.com/w/upload/1/18/WM8960_v4.2.pdf"
+
+["respeaker-2mic-v1/alsa/mixer.3d_filter_lower_cut_off"]
+text = """
+Lower cut-off of the 3D filter. Low is recommended for sample rates of 32 kHz or more. High is recommended below 32 kHz. It matters only when "3D Switch" is on.
+"""
+source = "https://www.waveshare.com/w/upload/1/18/WM8960_v4.2.pdf"

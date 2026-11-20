@@ -1,0 +1,52 @@
+name: Bug report
+description: Something in veux does not work as documented.
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: Say what you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Device kind
+      options:
+        - xvf3800
+        - respeaker-2mic-v1
+        - Other
+    validations:
+      required: true
+  - type: dropdown
+    id: link
+    attributes:
+      label: Link
+      options:
+        - usb (local)
+        - usb (remote, over SSH)
+        - esphome
+        - alsa (remote)
+    validations:
+      required: true
+  - type: input
+    id: firmware
+    attributes:
+      label: Firmware version
+      description: For example "XVF3800 USB 2.1.1", or the ESPHome version and the formatBCE ref.
+  - type: input
+    id: version
+    attributes:
+      label: veux version
+      description: The output of `veux --version`, or the commit.
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Output
+      description: >
+        The error text, and the output of `veux read <device>` if it helps. Remove API keys,
+        passwords, and host names that you do not want to share.
+      render: text

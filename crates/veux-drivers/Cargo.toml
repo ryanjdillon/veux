@@ -1,0 +1,19 @@
+[package]
+name = "veux-drivers"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+esphome-client = { version = "=0.2.1", default-features = false, features = ["api-1-16"] }
+rusb = { version = "0.9.4", features = ["vendored"] }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+thiserror = "2.0.21"
+tokio = { version = "1.54.1", features = ["rt", "time", "net"] }
+toml = "1.2.1"
+veux-model = { version = "0.1.0", path = "../veux-model" }
+
+[dev-dependencies]
+toml = "1.2.1"

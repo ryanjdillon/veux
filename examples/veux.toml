@@ -1,0 +1,70 @@
+# Example inventory: one XVF3800 on USB at a Pi, one XVF3800 on ESPHome (a
+# XIAO ESP32S3 voice satellite),
+# and two 2-Mics Pi HAT v1.x devices.
+
+[hosts.office-pi]
+ssh = "pi@office-pi.local"
+# helper_path = "/run/current-system/sw/bin/veux"
+
+[hosts.kitchen-pi]
+ssh = "pi@kitchen-pi.local"
+
+[hosts.bedroom-pi]
+ssh = "pi@bedroom-pi.local"
+
+[devices.office-array]
+kind = "xvf3800"
+link = "usb"
+host = "office-pi"
+profile = "array-default"
+
+[devices.desk-array]
+kind = "xvf3800"
+link = "esphome"
+address = "desk-array.local:6053"
+noise_key_env = "VEUX_DESK_API_KEY"
+profile = "desk-satellite"
+
+[devices.kitchen-hat]
+kind = "respeaker-2mic-v1"
+link = "alsa"
+host = "kitchen-pi"
+profile = "hat-default"
+
+[devices.bedroom-hat]
+kind = "respeaker-2mic-v1"
+link = "alsa"
+host = "bedroom-pi"
+profile = "hat-default"
+
+# XVF3800 parameter IDs: see `veux probe`, or docs/devices/xvf3800.md.
+[profiles.array-default]
+pp.agconoff = 1
+pp.agcmaxgain = 64.0
+pp.min_ns = 0.15
+led.effect = 4
+led.doa_color = [0x0000FF, 0x00FF00]
+
+# ESPHome parameter IDs are `<platform>.<slug of the entity name>`, read from
+# the device.
+# Run `veux read desk-array` to list them.
+[profiles.desk-satellite]
+switch.wake_sound = false
+select.dsp_route = "Comms to STT, ASR to wake word"
+number.asr_output_gain = 3.0
+number.agc_max_gain_comms = 96
+select.wake_word_sensitivity = "Slightly sensitive"
+# Speaker level: the volume first, then the output stage in 1 dB steps.
+# A high gain with the volume near 1 clips. Output gain is in the satellite
+# firmware config, not in the formatBCE packages; see docs/devices/esphome.md.
+media_player.media_player.volume = 1.0
+number.output_gain = 0
+
+# 2-Mic HAT mixer IDs are `mixer.<slug of the ALSA control name>`. With the
+# boost switches off, captures are almost silent; these values are a starting
+# point to tune.
+[profiles.hat-default]
+mixer.left_input_mixer_boost_switch = true
+mixer.right_input_mixer_boost_switch = true
+mixer.left_input_boost_mixer_linput1_volume = 1
+mixer.right_input_boost_mixer_rinput1_volume = 1

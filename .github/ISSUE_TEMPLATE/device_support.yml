@@ -1,0 +1,25 @@
+name: Device support
+description: Ask for a new device, link, or firmware to work with veux.
+labels: [device]
+body:
+  - type: input
+    id: hardware
+    attributes:
+      label: Hardware
+      description: The name and the version of the device.
+    validations:
+      required: true
+  - type: textarea
+    id: control
+    attributes:
+      label: How the device is controlled
+      description: >
+        Say what you know: USB vendor control, ALSA, an ESPHome API, or something else. Link
+        the vendor documentation or the command table.
+    validations:
+      required: true
+  - type: textarea
+    id: help
+    attributes:
+      label: Can you test it
+      description: Say if you have the device and can run a test build. veux needs a test on real hardware before it adds a parameter.
