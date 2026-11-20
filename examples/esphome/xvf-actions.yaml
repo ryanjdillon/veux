@@ -26,7 +26,11 @@ api:
   #   of milliseconds, which is too long to block the ESP32 main loop.
   # - xvf_set writes {resid, cmd, length, payload}. The payload is a hex
   #   string ("0a1b"): an int[] argument cannot go through api.respond. It
-  #   sets runtime values only; nothing is saved to the XVF3800 flash.
+  #   accepts only the resource and command IDs that veux writes, and none
+  #   that the formatBCE component owns or that are unsafe: the XMOS DFU
+  #   resource (240), the mute function (36/8), and the ASR route, gains, and
+  #   beam lock, which the component rewrites. It does not save to the XVF3800
+  #   flash. Add an ID to `allowed` below only if you know what it does.
   actions:
     - action: xvf_get
       supports_response: only
@@ -74,6 +78,19 @@ api:
             if (resid < 0 || resid > 255 || cmd < 0 || cmd > 127 || hex.size() % 2 != 0 ||
                 hex.size() > 128) {
               id(xvf_error) = "argument out of range";
+              return;
+            }
+            // PP 17: AGC and noise suppression. AEC 33 and AUDIO_MGR 35: echo
+            // cancellation and routing. AIC3104 levels: 48/11 and 48/12.
+            // The component owns AEC 35/36/37/81, AUDIO_MGR 15/19/23, and
+            // PP 11, so they are not allowed.
+            const bool allowed =
+                (resid == 17 && cmd != 11) ||
+                (resid == 33 && cmd != 35 && cmd != 36 && cmd != 37 && cmd != 81) ||
+                (resid == 35 && cmd != 15 && cmd != 19 && cmd != 23) ||
+                (resid == 48 && (cmd == 11 || cmd == 12));
+            if (!allowed) {
+              id(xvf_error) = "parameter not allowed";
               return;
             }
             std::vector<uint8_t> request = {(uint8_t) resid, (uint8_t) cmd, (uint8_t) (hex.size() / 2)};
