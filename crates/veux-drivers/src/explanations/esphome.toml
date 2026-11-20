@@ -1,5 +1,8 @@
 # Explanations of the ESPHome entities of the formatBCE XVF3800 satellite
 # (packages at 542a05d). See docs/development/explanations.md.
+# The firmware moved to formatBCE/Respeaker-ESPHome-integration, and the old
+# repository is frozen. The citations below name the old repository at
+# 542a05d. They stay valid as history.
 
 # Plain-language explanations of the XVF3800 satellite ESPHome entities.
 # Source: formatBCE/Respeaker-XVF3800-ESPHome-integration @ 542a05d44b6eb2c646a6ba0acd3e0cf2e6edcfab,

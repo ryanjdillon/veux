@@ -1,12 +1,14 @@
 # ESPHome additions that veux needs on an XVF3800 satellite.
 #
-# The satellite firmware is formatBCE Respeaker-XVF3800-ESPHome-integration.
+# The satellite firmware is formatBCE Respeaker-ESPHome-integration. It
+# replaces the frozen Respeaker-XVF3800-ESPHome-integration repository.
 # It has no way to read or write the raw XVF3800 parameters, or to run a DFU
 # update from the API. This file adds three API actions for that, and the
 # entities that report the update. Merge each part into your satellite config.
 #
-# Tested with formatBCE ref 542a05d44b6eb2c646a6ba0acd3e0cf2e6edcfab and
-# ESPHome 2026.9. The actions call the I2C device of the formatBCE component
+# Tested with release 2026.11.2 and ESPHome 2026.11.0 (XVF3800 firmware
+# 1.0.9). The earlier repository at ref 542a05d was tested too. The actions
+# call the I2C device of the formatBCE component `respeaker_xvf3800`
 # (`id: respeaker`). If your config gives it another id, change it here.
 #
 # Merge this file into the satellite config. Do not use it as a full config:
@@ -130,7 +132,7 @@ globals:
 
 # Part 3. Report the XVF3800 firmware update of `xvf_flash`. The triggers
 # merge into the `respeaker_xvf3800: firmware:` config of the formatBCE
-# package. veux follows the two entities below during an update.
+# packages. veux follows the two entities below during an update.
 respeaker_xvf3800:
   firmware:
     on_begin:
@@ -180,7 +182,7 @@ text_sensor:
 #
 # Part 4 needs the `output_gain_ready` global of Part 2. It also needs an
 # I2C device with the id `aic3104_dac`. The formatBCE package defines it in
-# its `hardware.yaml` (`audio_dac:`, platform `aic3104`). If your config
+# `packages/xvf3800/hardware.yaml` (`audio_dac:, platform `aic3104`). If your config
 # gives the codec another id, change it in the script below. Merge each block
 # into the matching block of your config.
 

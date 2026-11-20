@@ -1,7 +1,7 @@
 # Supported devices
 
 The `esphome` link is the ESPHome link of the XVF3800. It is not a separate kind.
-The XVF3800 satellite firmware needs three extra API actions for the raw parameters and DFU. See [xvf-actions.yaml](../../examples/esphome/xvf-actions.yaml).
+The XVF3800 satellite firmware is formatBCE [Respeaker-ESPHome-integration](https://github.com/formatBCE/Respeaker-ESPHome-integration). It needs three extra API actions for the raw parameters and DFU. See [xvf-actions.yaml](../../examples/esphome/xvf-actions.yaml).
 
 | Kind                                           | Hardware                              | Links                              |
 |---                                             |---                                    |---                                 |

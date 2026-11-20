@@ -8,7 +8,7 @@ XVF3800 voice satellite on a XIAO ESP32S3.
 | Need | Detail |
 |------|--------|
 | API encryption key | The key sits in the environment variable that `noise_key_env` names. See [Encryption key](#encryption-key). |
-| Satellite firmware | formatBCE Respeaker-XVF3800-ESPHome-integration. Tested with ref `542a05d44b6eb2c646a6ba0acd3e0cf2e6edcfab` and ESPHome 2026.9. |
+| Satellite firmware | formatBCE [Respeaker-ESPHome-integration](https://github.com/formatBCE/Respeaker-ESPHome-integration). Tested with release 2026.11.2, ESPHome 2026.11.0, and XVF3800 firmware 1.0.9. The earlier repository, Respeaker-XVF3800-ESPHome-integration, is frozen. veux was tested with it at ref `542a05d44b6eb2c646a6ba0acd3e0cf2e6edcfab` and ESPHome 2026.9. |
 | Raw parameters, firmware view, bundled flash | The three API actions of [xvf-actions.yaml](../../examples/esphome/xvf-actions.yaml): `xvf_get`, `xvf_set`, and `xvf_flash`. Without them the link stays in entity mode. |
 | Test tone | A media player that decodes FLAC, and inbound TCP port 8790 open on the machine that runs veux. See [Test tone](#test-tone). |
 
@@ -17,7 +17,8 @@ XVF3800 voice satellite on a XIAO ESP32S3.
 veux uses the ESPHome native API on TCP port 6053. The `esphome-client`
 crate does the framing and the Noise handshake
 (`Noise_NNpsk0_25519_ChaChaPoly_SHA256`). It is pinned to `=0.2.1` with the
-`api-1-16` feature, which agrees with ESPHome 2026.9.
+`api-1-16` feature, which agrees with ESPHome 2026.9. ESPHome 2026.11 reports API 1.19.
+The client works with it: the 2026-11-20 test used 2026.11.0.
 
 - Since ESPHome 2026.1 there is no password. The encryption key is the only
   credential.
@@ -122,9 +123,9 @@ the device.
    fetch, or after 10 s.
 
 FLAC, not WAV: an ESPHome media player decodes only the formats that its
-config asks for. The formatBCE package asks for FLAC (and MP3 for
-announcements), so a WAV URL fails as soon as the device reads the
-headers. The media pipeline of the package is stereo, so left and right
+config asks for. The formatBCE core package (`packages/core/media-player.yaml`) asks for
+FLAC, so a WAV URL fails as soon as the device reads the headers. Its
+media pipeline is stereo, so left and right
 work. The level follows the media player volume and the output gain.
 
 The device must reach the machine that runs veux on port 8790. The firewall
@@ -162,7 +163,13 @@ export VEUX_DESK_API_KEY='<the encryption key of the device>'
 ## Raw parameter actions
 
 The XVF3800 satellite firmware is the formatBCE
-Respeaker-XVF3800-ESPHome-integration project. It does not expose the raw
+[Respeaker-ESPHome-integration](https://github.com/formatBCE/Respeaker-ESPHome-integration)
+project. It has one core for all devices and one release. The XVF3800
+packages are in `packages/xvf3800/`, and the component
+`respeaker_xvf3800` is in `esphome/components/respeaker_xvf3800/`. The
+firmware moved from the earlier repository
+Respeaker-XVF3800-ESPHome-integration, which is frozen: old releases still
+build, but there are no new ones. It does not expose the raw
 XVF3800 parameters or a DFU update through the API. veux needs three extra
 API actions for the raw parameters, the firmware view, and the bundled
 flash. They give the ESPHome link the full XVF3800 command table of the USB
@@ -171,8 +178,11 @@ link.
 Add the actions to the satellite config. The file
 [`examples/esphome/xvf-actions.yaml`](../../examples/esphome/xvf-actions.yaml)
 has the YAML, with comments that say where each part goes. It was tested
-with formatBCE ref `542a05d44b6eb2c646a6ba0acd3e0cf2e6edcfab` and ESPHome
-2026.9. A flash from a URL and an upstream change to formatBCE are not done.
+with release 2026.11.2 and ESPHome 2026.11.0, and earlier with the earlier
+repository at ref `542a05d44b6eb2c646a6ba0acd3e0cf2e6edcfab` and ESPHome
+2026.9. Merged into `config/respeaker-xvf-satellite-factory.yaml` of
+release 2026.11.2, the file passes `esphome config` on ESPHome 2026.11.0.
+A flash from a URL and an upstream change to formatBCE are not done.
 
 Status:
 
@@ -187,7 +197,24 @@ Status:
 - The firmware view and `veux firmware` use `xvf_get` and `xvf_flash`. See
   "Firmware".
 
-Tested on a desk satellite on 2026-11-17: veux reads XVF3800 firmware
+Tested on a desk satellite on 2026-11-20 with release 2026.11.2, ESPHome
+2026.11.0, and XVF3800 firmware 1.0.9:
+
+- The OTA update to the release worked. The XVF3800 updated itself from
+  1.0.7 to 1.0.9 on boot.
+- veux read all 85 raw values.
+- The write round trip passed for `pp.dtsensitive`, `pp.gamma_e`, and
+  `aec.fixedbeamnoisethr`.
+- The bundled flash ran from 0 to 100 % and the device kept its settings.
+- The left-channel test tone played.
+- No entity was removed or renamed. The release adds
+  `binary_sensor.snooze_pending`, `number.snooze_duration`,
+  `switch.snooze_enabled`, and `text_sensor.dsp_status`.
+- `aec.hpfonoff` reads 0 on firmware 1.0.9. It read 2 on 1.0.7. This is
+  not checked against the vendor notes.
+
+Earlier test, with the earlier repository (ref `542a05d`, ESPHome 2026.9),
+on a desk satellite on 2026-11-17: veux reads XVF3800 firmware
 1.0.7. The ignored test `raw_actions_round_trip_on_a_device` checks the
 hidden IDs, reads 79 values, and writes, reads back, and restores
 `pp.dtsensitive`, `pp.gamma_e`, and `aec.fixedbeamnoisethr` through the
@@ -203,8 +230,9 @@ VEUX_TEST_ESPHOME=satellite.local:6053 VEUX_TEST_ESPHOME_KEY="$VEUX_DESK_API_KEY
 
 - The component adds two API actions with responses:
   `xvf_get(resid, cmd, len)` and `xvf_set(resid, cmd, payload)`. The
-  `xvf_set` payload is a hex string, for example `"0a1b"`: an `int[]`
-  argument does not compile with `api.respond` in ESPHome 2026.9.
+  `xvf_set` payload is a hex string, for example `"0a1b"`. In ESPHome
+  2026.9, an `int[]` argument does not compile with `api.respond`. ESPHome
+  2026.11.0 compiles it. The hex string works on both, so it stays.
 - The `xvf_get` response data is `{"reply": [status, payload...]}`. Only
   an I2C failure sets `success = false` and an error message.
 - API 1.16 has `ExecuteServiceRequest.return_response` and
@@ -238,8 +266,9 @@ VEUX_TEST_ESPHOME=satellite.local:6053 VEUX_TEST_ESPHOME_KEY="$VEUX_DESK_API_KEY
   entities, again at boot and after an XVF3800 reset. A raw write to them
   would not last. Thus veux shows the entity and hides the raw command:
   - the `led` group: the component sets the LED ring 20 times a second;
-  - `aec.asroutonoff`, `audio_mgr.op_l`, `audio_mgr.op_r`, and
-    `audio_mgr.op_all`: the DSP route;
+  - `aec.asroutonoff`, `audio_mgr.op_l`, and `audio_mgr.op_r`: the DSP
+    route. `audio_mgr.op_all` sets both outputs, so a write would override
+    the route and is hidden too;
   - `aec.asroutgain` and `pp.agcmaxgain`: the ASR output gain and the AGC
     maximum gain entities;
   - `aec.fixedbeamsonoff` and `aec.fixedbeamsazimuth_values`: the beam lock.
@@ -261,8 +290,9 @@ VEUX_TEST_ESPHOME=satellite.local:6053 VEUX_TEST_ESPHOME_KEY="$VEUX_DESK_API_KEY
   embeds it, and an OTA update puts it on the ESP32.
 - The config adds the API action `xvf_flash`. It calls
   `start_dfu_update()` of the component: the `respeaker_xvf3800.flash`
-  action does not compile in an action with arguments on ESPHome 2026.9.
-  It refuses while an update runs. It does not compare versions.
+  action does not compile in an action with arguments. This holds on ESPHome
+  2026.9 and on 2026.11.0: its `play(Ts... x)` does not match the base
+  class `play(const Ts &...x)`. The action refuses while an update runs. It does not compare versions.
 - The DFU triggers of the component (`on_begin`, `on_progress`, `on_end`,
   `on_error`) set two diagnostic entities: `text_sensor.xvf3800_update`
   (`flashing`, `done`, or `error N`) and `sensor.xvf3800_update_progress`
@@ -273,8 +303,10 @@ VEUX_TEST_ESPHOME=satellite.local:6053 VEUX_TEST_ESPHOME_KEY="$VEUX_DESK_API_KEY
   confirmation, and follow the two entities. veux reads only the entities
   during the update, because the XVF3800 does not answer raw reads in DFU.
   The update must start in 15 s and end in 15 minutes.
-- Tested on a desk satellite on 2026-11-17: `veux firmware desk-array
-  --bundled` wrote the 1.0.7 image again. The progress went from 0 to
+- Tested on a desk satellite on 2026-11-20 (release 2026.11.2): the
+  bundled flash ran from 0 to 100 % and the device kept its settings.
+  Earlier, with the earlier repository, on 2026-11-17: `veux firmware
+  desk-array --bundled` wrote the 1.0.7 image again. The progress went from 0 to
   100 %, and after the reset the XVF3800 answered raw reads and the ESP32
   had applied its entity values again.
 - Follow-up, if wanted: an action that takes a URL, so the ESP32 gets the
