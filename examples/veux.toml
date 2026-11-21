@@ -18,12 +18,12 @@ link = "usb"
 host = "office-pi"
 profile = "array-default"
 
-[devices.desk-array]
+[devices.living-room]
 kind = "xvf3800"
 link = "esphome"
-address = "desk-array.local:6053"
-noise_key_env = "VEUX_DESK_API_KEY"
-profile = "desk-satellite"
+address = "living-room.local:6053"
+noise_key_env = "VEUX_API_KEY"
+profile = "living-room-satellite"
 
 [devices.kitchen-hat]
 kind = "respeaker-2mic-v1"
@@ -47,8 +47,8 @@ led.doa_color = [0x0000FF, 0x00FF00]
 
 # ESPHome parameter IDs are `<platform>.<slug of the entity name>`, read from
 # the device.
-# Run `veux read desk-array` to list them.
-[profiles.desk-satellite]
+# Run `veux read living-room` to list them.
+[profiles.living-room-satellite]
 switch.wake_sound = false
 select.dsp_route = "Comms to STT, ASR to wake word"
 number.asr_output_gain = 3.0
