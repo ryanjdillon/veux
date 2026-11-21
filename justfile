@@ -34,7 +34,7 @@ release: build-helpers
     VEUX_EMBED_HELPER_X86_64={{justfile_directory()}}/target/x86_64-unknown-linux-musl/release/veux \
     cargo build --release --locked
 
-# Run veux with the given arguments, for example `just run read desk-array`.
+# Run veux with the given arguments, for example `just run read living-room`.
 # It builds with `release`, so the helpers for remote hosts are embedded.
 run *args: release
     ./target/release/veux {{args}}

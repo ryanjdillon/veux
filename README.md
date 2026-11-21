@@ -17,7 +17,7 @@ formatBCE do not endorse it.
 **[Development](docs/development/README.md)**
 
 <p align="center">
-  <img src="docs/assets/demo.gif" alt="veux reading a desk satellite, browsing its parameters, editing an option, and showing the firmware and test tone" width="900">
+  <img src="docs/assets/demo.gif" alt="veux reading a satellite, browsing its parameters, editing an option, and showing the firmware and test tone" width="900">
 </p>
 
 ## Features
@@ -133,8 +133,8 @@ veux export kitchen-hat   # prints the runtime values as a profile table
 ### Read and write values
 
 ```bash
-veux read desk-array number.asr_output_gain
-veux write desk-array switch.wake_sound=false   # runtime only, in TOML syntax
+veux read living-room number.asr_output_gain
+veux write living-room switch.wake_sound=false   # runtime only, in TOML syntax
 ```
 
 ### Monitor and test
@@ -149,7 +149,7 @@ veux tone kitchen-hat --channel right    # plays a test tone on one channel
 ```bash
 veux firmware office-array               # shows the version and DFU slots
 veux firmware office-array image.bin     # flashes an image after a confirmation
-veux firmware desk-array --bundled       # ESPHome: the ESP32 writes the image of its build
+veux firmware living-room --bundled       # ESPHome: the ESP32 writes the image of its build
 ```
 
 ### Find devices

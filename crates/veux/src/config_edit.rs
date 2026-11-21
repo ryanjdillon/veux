@@ -130,17 +130,17 @@ mod tests {
     use super::*;
 
     const CONFIG: &str = r#"# My satellites.
-[devices.desk]
+[devices.room]
 kind = "xvf3800"
 link = "esphome"
 address = "sat.local:6053"
-profile = "desk"   # tuned by ear
+profile = "room"   # tuned by ear
 
 [devices.hat]
 kind = "respeaker-2mic-v1"
 link = "alsa"
 
-[profiles.desk]
+[profiles.room]
 switch.wake_sound = false
 number.asr_output_gain = 3.0   # was too quiet at 1
 "#;
@@ -155,12 +155,12 @@ number.asr_output_gain = 3.0   # was too quiet at 1
 
     #[test]
     fn updates_a_value_and_keeps_comments_and_style() {
-        let (profile, text) = save(&[("number.asr_output_gain", Value::Float(4.5))], "desk");
-        assert_eq!(profile, "desk");
+        let (profile, text) = save(&[("number.asr_output_gain", Value::Float(4.5))], "room");
+        assert_eq!(profile, "room");
         assert!(text.contains("number.asr_output_gain = 4.5"), "{text}");
         assert!(text.contains("# was too quiet at 1"), "{text}");
         assert!(text.starts_with("# My satellites."));
-        assert!(text.contains(r#"profile = "desk"   # tuned by ear"#));
+        assert!(text.contains(r#"profile = "room"   # tuned by ear"#));
         assert_eq!(text.lines().count(), CONFIG.lines().count());
     }
 
@@ -171,12 +171,12 @@ number.asr_output_gain = 3.0   # was too quiet at 1
                 ("select.dsp_route", Value::Enum("Comms".into())),
                 ("number.agc_max_gain_comms", Value::Int(96)),
             ],
-            "desk",
+            "room",
         );
         assert!(text.contains(r#"select.dsp_route = "Comms""#), "{text}");
         assert!(text.contains("number.agc_max_gain_comms = 96"), "{text}");
         let config = veux_model::Config::parse(&text).unwrap();
-        assert_eq!(config.profiles["desk"].values.len(), 4);
+        assert_eq!(config.profiles["room"].values.len(), 4);
     }
 
     #[test]
@@ -195,7 +195,7 @@ number.asr_output_gain = 3.0   # was too quiet at 1
     #[test]
     fn refuses_nan_and_unknown_devices() {
         let values = [(ParamId::from("a.b"), Value::Float(f64::NAN))];
-        assert!(save_values(CONFIG, "desk", &values).is_err());
+        assert!(save_values(CONFIG, "room", &values).is_err());
         let values = [(ParamId::from("a.b"), Value::Int(1))];
         assert!(save_values(CONFIG, "toaster", &values).is_err());
     }

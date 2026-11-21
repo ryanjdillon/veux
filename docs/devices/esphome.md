@@ -40,7 +40,7 @@ them when it connects.
 A parameter ID is `<platform>.<slug>`. veux makes the slug from the entity
 name: lower case letters and digits, and one `_` for each run of other
 characters. Home Assistant adds the device name, so its entity ID differs:
-`switch.wake_sound` in veux is `switch.desk_satellite_wake_sound` in Home
+`switch.wake_sound` in veux is `switch.living_room_satellite_wake_sound` in Home
 Assistant. ESPHome 2026 sends
 an empty `object_id`, so veux does not use it. If two entities of one
 platform have the same name, the second gets `_2`. Run `veux read <device>`
@@ -157,7 +157,7 @@ holds this base64 key (`noise_key_env`). Set the variable before you start
 veux. veux never reads a secret file. For example:
 
 ```bash
-export VEUX_DESK_API_KEY='<the encryption key of the device>'
+export VEUX_API_KEY='<the encryption key of the device>'
 ```
 
 ## Raw parameter actions
@@ -197,7 +197,7 @@ Status:
 - The firmware view and `veux firmware` use `xvf_get` and `xvf_flash`. See
   "Firmware".
 
-Tested on a desk satellite on 2026-11-20 with release 2026.11.2, ESPHome
+Tested on a test satellite on 2026-11-20 with release 2026.11.2, ESPHome
 2026.11.0, and XVF3800 firmware 1.0.9:
 
 - The OTA update to the release worked. The XVF3800 updated itself from
@@ -214,7 +214,7 @@ Tested on a desk satellite on 2026-11-20 with release 2026.11.2, ESPHome
   not checked against the vendor notes.
 
 Earlier test, with the earlier repository (ref `542a05d`, ESPHome 2026.9),
-on a desk satellite on 2026-11-17: veux reads XVF3800 firmware
+on a test satellite on 2026-11-17: veux reads XVF3800 firmware
 1.0.7. The ignored test `raw_actions_round_trip_on_a_device` checks the
 hidden IDs, reads 79 values, and writes, reads back, and restores
 `pp.dtsensitive`, `pp.gamma_e`, and `aec.fixedbeamnoisethr` through the
@@ -222,7 +222,7 @@ hidden IDs, reads 79 values, and writes, reads back, and restores
 without an error on the I2S firmware. Run the test against a device:
 
 ```bash
-VEUX_TEST_ESPHOME=satellite.local:6053 VEUX_TEST_ESPHOME_KEY="$VEUX_DESK_API_KEY" \
+VEUX_TEST_ESPHOME=satellite.local:6053 VEUX_TEST_ESPHOME_KEY="$VEUX_API_KEY" \
   cargo test -p veux-drivers -- --ignored raw_actions --nocapture
 ```
 
@@ -255,7 +255,7 @@ VEUX_TEST_ESPHOME=satellite.local:6053 VEUX_TEST_ESPHOME_KEY="$VEUX_DESK_API_KEY
   then the payload. The component adds a read helper for this.
 - The ESP32 does one I2C read for each call and returns the status. veux
   retries a busy status (1 or `0x40`) every 10 ms for up to 1 s, as on
-  USB. On a desk satellite, a PP parameter read stayed busy for more
+  USB. On a test satellite, a PP parameter read stayed busy for more
   than 5 retries 2 ms apart. A longer wait on the ESP32 would block its
   main loop.
 
@@ -285,7 +285,7 @@ VEUX_TEST_ESPHOME=satellite.local:6053 VEUX_TEST_ESPHOME_KEY="$VEUX_DESK_API_KEY
   until it reboots, and `commit` does nothing. Run `apply` after a reboot.
 - A raw parameter gets the explanation of the same ID on USB.
 - A USB profile works on this link, except for the hidden IDs above.
-- A full read takes about 1.5 s on a desk satellite: one round trip for
+- A full read takes about 1.5 s on a test satellite: one round trip for
   each of about 60 raw parameters.
 
 ### Firmware
@@ -315,10 +315,10 @@ VEUX_TEST_ESPHOME=satellite.local:6053 VEUX_TEST_ESPHOME_KEY="$VEUX_DESK_API_KEY
   confirmation, and follow the two entities. veux reads only the entities
   during the update, because the XVF3800 does not answer raw reads in DFU.
   The update must start in 15 s and end in 15 minutes.
-- Tested on a desk satellite on 2026-11-20 (release 2026.11.2): the
+- Tested on a test satellite on 2026-11-20 (release 2026.11.2): the
   bundled flash ran from 0 to 100 % and the device kept its settings.
   Earlier, with the earlier repository, on 2026-11-17: `veux firmware
-  desk-array --bundled` wrote the 1.0.7 image again. The progress went from 0 to
+  living-room --bundled` wrote the 1.0.7 image again. The progress went from 0 to
   100 %, and after the reset the XVF3800 answered raw reads and the ESP32
   had applied its entity values again.
 - Follow-up, if wanted: an action that takes a URL, so the ESP32 gets the
